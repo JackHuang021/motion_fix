@@ -193,8 +193,9 @@ struct config {
     const char      *sql_query;
 
     /* Command line parameters */
+    /* 保存命令行参数 */
     int             argc;
-    char            **argv;
+    char            **argv;     
 };
 
 struct context;
@@ -208,10 +209,10 @@ typedef const char *(* conf_print_func)(struct context **, char **, int, unsigne
  * description for parameters in the config file
  */
 typedef struct {
-    const char      *param_name;      /* name for this parameter                  */
-    const char      *param_help;      /* short explanation for parameter          */
+    const char      *param_name;      /* name for this parameter                  参数名称 */
+    const char      *param_help;      /* short explanation for parameter          参数介绍 */
     unsigned int    main_thread;      /* belong only to main thread when value>0  */
-    int             conf_value;       /* pointer to a field in struct context     */
+    int             conf_value;       /* pointer to a field in struct context     结构体成员的偏移地址 */
     conf_copy_func  copy;             /* a function to set the value in 'config'  */
     conf_print_func print;            /* a function to output the value to a file */
     int             webui_level;      /* Enum to display in webui: 0,1,2,3,99(always to never)*/

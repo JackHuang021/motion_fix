@@ -1038,7 +1038,8 @@ static int motion_init(struct context *cnt)
     FILE *picture;
     int indx, retcd;
 
-    util_threadname_set("ml",cnt->threadnr,cnt->conf.camera_name);
+    /* 设置进程名称 */
+    util_threadname_set("ml", cnt->threadnr, cnt->conf.camera_name);
 
     /* Store thread number in TLS. */
     pthread_setspecific(tls_key_threadnr, (void *)((unsigned long)cnt->threadnr));
@@ -2974,6 +2975,7 @@ static void cntlist_create(int argc, char *argv[])
     context_init(cnt_list[0]);
 
     /* Initialize some static and global string variables */
+    /* 获取本地主机名， PATH_MAX 4096 */
     gethostname (cnt_list[0]->hostname, PATH_MAX);
     cnt_list[0]->hostname[PATH_MAX-1] = '\0';
     /* end of variables */
@@ -3192,7 +3194,7 @@ static void motion_startup(int daemonize, int argc, char *argv[])
     set_log_level(cnt_list[0]->log_level);
     set_log_type(cnt_list[0]->log_type);
 
-
+    /* 守护进程设置 */
     if (daemonize) {
         /*
          * If daemon mode is requested, and we're not going into setup mode,
@@ -3211,7 +3213,7 @@ static void motion_startup(int daemonize, int argc, char *argv[])
     conf_output_parms(cnt_list);
 
     motion_ntc();
-
+    /* 摄像头id赋值 */
     motion_camera_ids();
 
     initialize_chars();
@@ -3517,6 +3519,7 @@ int main (int argc, char **argv)
     int i;
 
     /* Create the TLS key for thread number. */
+    /* 在为线程分配私有数据区之前，需要调用该函数创建一个特有的数据键 */
     pthread_key_create(&tls_key_threadnr, NULL);
     pthread_setspecific(tls_key_threadnr, (void *)(0));
 

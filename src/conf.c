@@ -221,7 +221,7 @@ static void config_parms_intl(void);
 
 /* Pointer magic to determine relative addresses of variables to a
    struct context pointer */
-#define CNT_OFFSET(varname) ((long)&((struct context *)NULL)->varname)
+#define CNT_OFFSET(varname) ((long)&((struct context *)NULL)->varname)  /* 获取cnt结构体中成员的偏移地址 */
 #define CONF_OFFSET(varname) ((long)&((struct context *)NULL)->conf.varname)
 #define TRACK_OFFSET(varname) ((long)&((struct context *)NULL)->track.varname)
 
@@ -2359,6 +2359,7 @@ static void conf_cmdline(struct context *cnt, int thread)
     struct config *conf = &cnt->conf;
     int c;
 
+    /* getopt调用一次返回一个选项，检查不到任何选项时返回-1，选项的参数指针存在optarg中 */
     while ((c = getopt(conf->argc, conf->argv, "bc:d:hmns?p:k:l:")) != EOF) {
         switch (c) {
         case 'c':
@@ -2704,6 +2705,8 @@ void conf_print(struct context **cnt)
  *   option given by motion.conf or a camera config file.
  *
  * Returns context struct.
+ * 
+ * 填充cnt结构体成员
  */
 struct context **conf_load(struct context **cnt)
 {
@@ -2718,6 +2721,7 @@ struct context **conf_load(struct context **cnt)
      * Copy the template config structure with all the default config values
      * into cnt[0]->conf
      */
+    /* 按照默认参数填充conf数据 */
     memcpy(&cnt[0]->conf, &conf_template, sizeof(struct config));
 
     /*
@@ -2729,6 +2733,7 @@ struct context **conf_load(struct context **cnt)
      * This ensures that we can free and malloc the string when changed
      * via http remote control or config file or Command-line options.
      */
+    /* 对字符串手动进行了内存分配 */
     malloc_strings(cnt[0]);
 
     /* Restore the argc and argv */
@@ -2742,6 +2747,7 @@ struct context **conf_load(struct context **cnt)
      * 3. $HOME/.motion/motion.conf
      * 4. sysconfdir/motion.conf
      */
+    /* 在上述四个路径中查找配置文件 */
     /* Get filename , pid file & log file from Command-line. */
     cnt[0]->log_type_str[0] = 0;
     cnt[0]->conf_filename[0] = 0;
@@ -2749,8 +2755,10 @@ struct context **conf_load(struct context **cnt)
     cnt[0]->log_file[0] = 0;
     cnt[0]->log_level = -1;
 
+    /* 从命令行参数中获取文件名 */
     conf_cmdline(cnt[0], -1);
 
+    /* 读取配置文件 */
     if (cnt[0]->conf_filename[0]) {
         /* User has supplied filename on Command-line. */
         strncpy(filename, cnt[0]->conf_filename, PATH_MAX-1);
@@ -2955,7 +2963,8 @@ static void malloc_strings(struct context *cnt)
         if (config_params[i].copy == copy_string) {
             /* if member is a string */
             /* val is made to point to a pointer to the current string. */
-            val = (char **)((char *)cnt+config_params[i].conf_value);
+            /* 获取cnt结构体成员的地址 */
+            val = (char **)((char *)cnt + config_params[i].conf_value);
 
             /*
              * If there is a string, malloc() space for it, copy
