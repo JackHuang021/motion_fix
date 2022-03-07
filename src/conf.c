@@ -2737,6 +2737,7 @@ struct context **conf_load(struct context **cnt)
     malloc_strings(cnt[0]);
 
     /* Restore the argc and argv */
+    /* 在conf中保存命令行参数 */
     cnt[0]->conf.argv = argv;
     cnt[0]->conf.argc = argc;
 

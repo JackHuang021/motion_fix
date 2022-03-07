@@ -260,16 +260,9 @@ static void image_save_as_preview(struct context *cnt, struct image_data *img)
 }
 
 /**
- * context_init
- *
- *   Initializes a context struct with the default values for all the
- *   variables.
- *
- * Parameters:
- *
- *   cnt - the context struct to destroy
- *
- * Returns: nothing
+ * @brief 初始化上下文结构体内容
+ * 
+ * @param cnt 上下文结构体指针
  */
 static void context_init(struct context *cnt)
 {
@@ -282,7 +275,7 @@ static void context_init(struct context *cnt)
     * changes to this assumption, any pointers which are intended
     * to be initialised to NULL are listed within a comment.
     */
-
+    /* 结构体数据清零 */
     memset(cnt, 0, sizeof(struct context));
     cnt->noise = 255;
     cnt->lastrate = 25;
@@ -420,7 +413,9 @@ static void sigchild_handler(int signo)
 {
     (void)signo;
 
+    /* WNOHANG 不阻塞模式 */
     #ifdef WNOHANG
+        /* waitpid 等待子进程结束，结束后返回子进程的编号 */
         while (waitpid(-1, NULL, WNOHANG) > 0) {
             continue;
         }
@@ -431,6 +426,12 @@ static void sigchild_handler(int signo)
 /**
  * setup_signals
  *   Attaches handlers to a number of signals that Motion need to catch.
+ */
+
+
+/**
+ * @brief Set the up signals object
+ * 
  */
 static void setup_signals(void)
 {
@@ -443,6 +444,7 @@ static void setup_signals(void)
     struct sigaction sig_handler_action;
     struct sigaction sigchild_action;
 
+    /* 屏蔽子进程停止和恢复信号 */
     #ifdef SA_NOCLDWAIT
         sigchild_action.sa_flags = SA_NOCLDWAIT;
     #else
@@ -450,6 +452,8 @@ static void setup_signals(void)
     #endif
     sigchild_action.sa_handler = sigchild_handler;
     sigemptyset(&sigchild_action.sa_mask);
+
+    /* 系统调用阻塞后重新执行该系统调用 */
     #ifdef SA_RESTART
         sig_handler_action.sa_flags = SA_RESTART;
     #else
@@ -459,13 +463,34 @@ static void setup_signals(void)
     sigemptyset(&sig_handler_action.sa_mask);
 
     /* Enable automatic zombie reaping */
+    /* SIGCHLD 子进程终止时发送给父进程 */
     sigaction(SIGCHLD, &sigchild_action, NULL);
+    /*
+     * 连接建立，若某一端关闭连接，而另一端仍然向它写数据，
+     * 第一次写数据后会收到RST响应，此后再写数据，内核将向
+     * 进程发出SIGPIPE信号
+     */         
     sigaction(SIGPIPE, &sigchild_action, NULL);
+
+    /* 定时器超时信号 */
     sigaction(SIGALRM, &sig_handler_action, NULL);
+    /* 用户终端连接(正常或非正常)结束时发出 */
     sigaction(SIGHUP, &sig_handler_action, NULL);
+    /* 程序终止信号，CTRL+C发出 */
     sigaction(SIGINT, &sig_handler_action, NULL);
+    /* 
+     * 和SIGINT类似, 但由QUIT字符(通常是Ctrl-\)来控制. 
+     * 进程在因收到SIGQUIT退出时会产生core文件, 在这个意
+     * 义上类似于一个程序错误信号。
+     */
     sigaction(SIGQUIT, &sig_handler_action, NULL);
+    /*
+     * 程序结束(terminate)信号, 该信号可以被阻塞和处理。 
+     */
     sigaction(SIGTERM, &sig_handler_action, NULL);
+    /* 
+     * 用户自定义信号
+     */
     sigaction(SIGUSR1, &sig_handler_action, NULL);
 
     /* use SIGVTALRM as a way to break out of the ioctl, don't restart */
@@ -1078,15 +1103,18 @@ static int motion_init(struct context *cnt)
         cnt->conf.target_dir = mystrdup(".");
     }
 
+    /* 初始化相机类型 */
     if (init_camera_type(cnt) != 0 ) {
         return -3;
     }
 
+    /* 仅针对RTSP类型摄像头使能passthrough */
     if ((cnt->camera_type != CAMERA_TYPE_RTSP) && (cnt->movie_passthrough)) {
         MOTION_LOG(WRN, TYPE_ALL, NO_ERRNO,_("Pass-through processing disabled."));
         cnt->movie_passthrough = FALSE;
     }
 
+    /* 画面默认大小为640x480 */
     if ((cnt->conf.height == 0) || (cnt->conf.width == 0)) {
         MOTION_LOG(WRN, TYPE_ALL, NO_ERRNO
             ,_("Invalid configuration dimensions %dx%d"),cnt->conf.height,cnt->conf.width);
@@ -1095,6 +1123,7 @@ static int motion_init(struct context *cnt)
         MOTION_LOG(WRN, TYPE_ALL, NO_ERRNO
             ,_("Using default dimensions %dx%d"),cnt->conf.height,cnt->conf.width);
     }
+    /* 画面宽高向上取8的倍数 */
     if (cnt->conf.width % 8) {
         MOTION_LOG(CRT, TYPE_NETCAM, NO_ERRNO
             ,_("Image width (%d) requested is not modulo 8."), cnt->conf.width);
@@ -1109,6 +1138,7 @@ static int motion_init(struct context *cnt)
         MOTION_LOG(CRT, TYPE_NETCAM, NO_ERRNO
             ,_("Adjusting height to next higher multiple of 8 (%d)."), cnt->conf.height);
     }
+    /* 最小宽高为64x64 */
     if (cnt->conf.width  < 64) {
         cnt->conf.width  = 64;
     }
@@ -2966,12 +2996,15 @@ static void cntlist_create(int argc, char *argv[])
      * and a NULL pointer which indicates that end of the array of pointers to
      * thread context structures.
      */
+    /* 上下文指针数组分配内存 */
     cnt_list = mymalloc(sizeof(struct context *) * 2);
 
     /* Now we reserve room for thread 0's context structure and let cnt_list[0] point to it */
+    /* 上下文分配指针 */
     cnt_list[0] = mymalloc(sizeof(struct context));
 
     /* Populate context structure with start/default values */
+    /* 初始化上下文结构体内容 */
     context_init(cnt_list[0]);
 
     /* Initialize some static and global string variables */
@@ -2987,8 +3020,10 @@ static void cntlist_create(int argc, char *argv[])
      * Command line arguments are being pointed to from cnt_list[0] and we call conf_load which loads
      * the config options from motion.conf, thread config files and the command line.
      */
+    /* 保存命令行输入参数 */
     cnt_list[0]->conf.argv = argv;
     cnt_list[0]->conf.argc = argc;
+    /* 解析配置文件内的参数 */
     cnt_list = conf_load(cnt_list);
 }
 
@@ -3143,6 +3178,7 @@ static void motion_startup(int daemonize, int argc, char *argv[])
      * Create the list of context structures and load the
      * configuration.
      */
+    /* 上下文结构体分配指针，并初始化部分成员 */
     cntlist_create(argc, argv);
 
     if ((cnt_list[0]->conf.log_level > ALL) ||
@@ -3523,6 +3559,7 @@ int main (int argc, char **argv)
     pthread_key_create(&tls_key_threadnr, NULL);
     pthread_setspecific(tls_key_threadnr, (void *)(0));
 
+    /* 处理外部信号和子线程信号 */
     setup_signals();
 
     motion_startup(1, argc, argv);

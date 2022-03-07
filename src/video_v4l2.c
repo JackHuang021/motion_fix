@@ -165,7 +165,6 @@ static void v4l2_vdev_init(struct context *cnt)
     cnt->vdev->update_params = TRUE;     /*Set trigger that we have updated user parameters */
 
     return;
-
 }
 
 static int v4l2_ctrls_count(struct video_dev *curdev)
