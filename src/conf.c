@@ -2354,6 +2354,13 @@ static void copy_html_output(struct context *cnt, char *config_val)
  *
  * Returns nothing.
  */
+
+/**
+ * @brief 解析命令行参数
+ * 
+ * @param cnt 上下文结构体指针
+ * @param thread 
+ */
 static void conf_cmdline(struct context *cnt, int thread)
 {
     struct config *conf = &cnt->conf;
@@ -2423,6 +2430,16 @@ static void conf_cmdline(struct context *cnt, int thread)
  *      assigned.
  *
  * Returns context struct.
+ */
+
+
+/**
+ * @brief 对应配置项进行赋值
+ * 
+ * @param cnt 上下文结构体指针
+ * @param param_name 参数名称
+ * @param param_val 参数值
+ * @return struct context** 
  */
 struct context **conf_cmdparse(struct context **cnt, char *param_name, char *param_val)
 {
@@ -2520,6 +2537,14 @@ struct context **conf_cmdparse(struct context **cnt, char *param_name, char *par
  *
  * Returns context struct.
  */
+
+/**
+ * @brief 解析配置文件
+ * 
+ * @param cnt 上下文结构体指针
+ * @param fp 配置文件句柄
+ * @return struct context** 
+ */
 static struct context **conf_process(struct context **cnt, FILE *fp)
 {
     /* Process each line from the config file. */
@@ -2578,6 +2603,7 @@ static struct context **conf_process(struct context **cnt, FILE *fp)
                  * These parameters use the util_parms_parse routine that
                  * will strip away the quotes if they are there
                  */
+                /* haystack 中查找第一次出现字符串 needle 的位置，不包含终止符 */
                 if (strstr(cmd, "params") == NULL) {
                     if ((beg[0] == '"' && beg[strlen(beg)-1] == '"') ||
                         (beg[0] == '\'' && beg[strlen(beg)-1] == '\'')) {
@@ -2589,7 +2615,7 @@ static struct context **conf_process(struct context **cnt, FILE *fp)
                 arg1 = beg; /* Argument starts here */
             }
             /* Else arg1 stays null pointer */
-
+            /* 赋值对应的配置项 */
             cnt = conf_cmdparse(cnt, cmd, arg1);
         }
     }
@@ -2767,6 +2793,7 @@ struct context **conf_load(struct context **cnt)
         fp = fopen (filename, "r");
     }
 
+    /* 在当前工作目录查找配置文件 */
     if (!fp) {  /* Command-line didn't work, try current dir. */
         char path[PATH_MAX];
 
@@ -2776,6 +2803,7 @@ struct context **conf_load(struct context **cnt)
                 ,filename);
         }
 
+        /* getcwd会将当前的工作目录绝对路径复制到参数buf 所指的内存空间 */
         if (getcwd(path, sizeof(path)) == NULL) {
             MOTION_LOG(ERR, TYPE_ALL, SHOW_ERRNO, _("Error getcwd"));
             exit(-1);
@@ -2787,10 +2815,12 @@ struct context **conf_load(struct context **cnt)
         fp = fopen (filename, "r");
     }
 
+    /* 当前工作目录没有配置文件，直接在家目录下进行查找 */
     if (!fp) {  /* Specified file does not exist... try default file. */
         snprintf(filename, PATH_MAX, "%s/.motion/motion.conf", getenv("HOME"));
         fp = fopen(filename, "r");
 
+        /* 家目录下也无配置文件，直接在系统配置目录找 */
         if (!fp) {
             snprintf(filename, PATH_MAX, "%s/motion.conf", sysconfdir);
             fp = fopen(filename, "r");
