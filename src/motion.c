@@ -2895,6 +2895,11 @@ static void *motion_loop(void *arg)
  *
  * Returns: nothing
  */
+
+/**
+ * @brief 建立守护进程
+ * 
+ */
 static void become_daemon(void)
 {
     int i;
@@ -3169,6 +3174,15 @@ static void motion_ntc(void)
  *
  * Returns: nothing
  */
+
+
+/**
+ * @brief motion启动初始化，在主线程中调用
+ * 
+ * @param daemonize 守护线程标志
+ * @param argc 命令行参数
+ * @param argv 命令行参数
+ */
 static void motion_startup(int daemonize, int argc, char *argv[])
 {
      /* Initialize our global mutex */
@@ -3178,9 +3192,10 @@ static void motion_startup(int daemonize, int argc, char *argv[])
      * Create the list of context structures and load the
      * configuration.
      */
-    /* 上下文结构体分配指针，并初始化部分成员 */
+    /* 上下文结构体分配指针，并初始化部分成员，加载配置文件参数 */
     cntlist_create(argc, argv);
 
+    /* 配置日志记录等级 */
     if ((cnt_list[0]->conf.log_level > ALL) ||
         (cnt_list[0]->conf.log_level == 0)) {
         cnt_list[0]->conf.log_level = LEVEL_DEFAULT;
@@ -3193,7 +3208,7 @@ static void motion_startup(int daemonize, int argc, char *argv[])
         cnt_list[0]->log_level = cnt_list[0]->conf.log_level - 1; // Let's make syslog compatible
     }
 
-
+    /* 配置日志记录文件，日志文件设置不成功直接退出 */
     if ((cnt_list[0]->conf.log_file) && (strncmp(cnt_list[0]->conf.log_file, "syslog", 6))) {
         set_log_mode(LOGMODE_FILE);
         ptr_logfile = set_logfile(cnt_list[0]->conf.log_file);
@@ -3213,7 +3228,7 @@ static void motion_startup(int daemonize, int argc, char *argv[])
         MOTION_LOG(NTC, TYPE_ALL, NO_ERRNO, _("Logging to syslog"));
     }
 
-    MOTION_LOG(NTC, TYPE_ALL, NO_ERRNO, _("Motion %s Started"),VERSION);
+    MOTION_LOG(NTC, TYPE_ALL, NO_ERRNO, _("Motion %s Started"), VERSION);
 
     if ((cnt_list[0]->conf.log_type == NULL) ||
         !(cnt_list[0]->log_type = get_log_type(cnt_list[0]->conf.log_type))) {
@@ -3227,10 +3242,11 @@ static void motion_startup(int daemonize, int argc, char *argv[])
     MOTION_LOG(NTC, TYPE_ALL, NO_ERRNO, _("Using log type (%s) log level (%s)"),
                get_log_type_str(cnt_list[0]->log_type), get_log_level_str(cnt_list[0]->log_level));
 
+    /* 设置日志等级和日志类型 */
     set_log_level(cnt_list[0]->log_level);
     set_log_type(cnt_list[0]->log_type);
 
-    /* 守护进程设置 */
+    /* 守护进程设置，默认开启守护进程 */
     if (daemonize) {
         /*
          * If daemon mode is requested, and we're not going into setup mode,
