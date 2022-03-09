@@ -204,6 +204,12 @@ static inline void rot90ccw(unsigned char *src, register unsigned char *dst
  *
  * Returns: nothing
  */
+
+/**
+ * @brief 图像旋转初始化
+ * 
+ * @param cnt 
+ */
 void rotate_init(struct context *cnt)
 {
     int size_norm, size_high;
@@ -216,6 +222,7 @@ void rotate_init(struct context *cnt)
      * Assign the value in conf.rotate to rotate_data.degrees. This way,
      * we have a value that is safe from changes caused by motion-control.
      */
+    /* 旋转角度 */
     if ((cnt->conf.rotate % 90) > 0) {
         MOTION_LOG(WRN, TYPE_ALL, NO_ERRNO
             ,_("Config option \"rotate\" not a multiple of 90: %d")
@@ -225,7 +232,7 @@ void rotate_init(struct context *cnt)
     } else {
         cnt->rotate_data.degrees = cnt->conf.rotate % 360; /* Range: 0..359 */
     }
-
+    /* 旋转方向 */
     if (cnt->conf.flip_axis[0]=='h') {
         cnt->rotate_data.axis = FLIP_TYPE_HORIZONTAL;
     } else if (cnt->conf.flip_axis[0]=='v') {

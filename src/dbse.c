@@ -308,6 +308,14 @@ static int dbse_init_pgsql(struct context *cnt)
  * dbse_init
  *
  */
+
+/**
+ * @brief 
+ * 
+ * @param cnt 上下文结构体指针
+ * @param cntlist 
+ * @return int 
+ */
 int dbse_init(struct context *cnt, struct context **cntlist)
 {
     int retcd = 0;

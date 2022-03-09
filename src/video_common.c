@@ -273,6 +273,15 @@ void vid_bayer2rgb24(unsigned char *dst, unsigned char *src, long int width, lon
 
 }
 
+
+/**
+ * @brief 
+ * 
+ * @param map 目的图像内存区
+ * @param cap_map 抓取的图像内存区
+ * @param width 图像宽度
+ * @param height 图像高度
+ */
 void vid_yuv422to420p(unsigned char *map, unsigned char *cap_map, int width, int height)
 {
     unsigned char *src, *dest, *src2, *dest2;
@@ -306,6 +315,15 @@ void vid_yuv422to420p(unsigned char *map, unsigned char *cap_map, int width, int
     }
 }
 
+
+/**
+ * @brief 
+ * 
+ * @param map 
+ * @param cap_map 
+ * @param width 
+ * @param height 
+ */
 void vid_yuv422pto420p(unsigned char *map, unsigned char *cap_map, int width, int height)
 {
     unsigned char *src, *dest, *dest2;
@@ -711,6 +729,14 @@ int vid_start(struct context *cnt)
  *    Positive numbers...
  *    with bit 0 set            Non fatal V4L error (copy grey image and discard this image)
  *    with bit 1 set            Non fatal Netcam error
+ */
+
+/**
+ * @brief 获取下一帧图像数据
+ * 
+ * @param cnt 上下文结构体指针
+ * @param img_data 图像数据结构体指针
+ * @return int 
  */
 int vid_next(struct context *cnt, struct image_data *img_data)
 {

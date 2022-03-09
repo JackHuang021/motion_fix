@@ -1085,6 +1085,19 @@ struct draw_char draw_table[]= {
 /**
  * draw_textn
  */
+
+/**
+ * @brief 
+ * 
+ * @param image 
+ * @param startx 
+ * @param starty 
+ * @param width 
+ * @param text 
+ * @param len 
+ * @param factor 
+ * @return int 
+ */
 static int draw_textn(unsigned char *image, int startx,  int starty,  int width, const char *text, int len, int factor)
 {
 
@@ -1145,6 +1158,19 @@ static int draw_textn(unsigned char *image, int startx,  int starty,  int width,
 
 /**
  * draw_text
+ */
+
+/**
+ * @brief 
+ * 
+ * @param image 
+ * @param width 
+ * @param height 
+ * @param startx 
+ * @param starty 
+ * @param text 
+ * @param factor 
+ * @return int 
  */
 int draw_text(unsigned char *image, int width, int height, int startx, int starty, const char *text, int factor)
 {

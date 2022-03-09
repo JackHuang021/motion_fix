@@ -374,8 +374,8 @@ static int v4l2_ctrls_set(struct video_dev *curdev)
 /**
  * @brief 
  * 
- * @param cnt 
- * @param curdev 
+ * @param cnt 上下文结构体指针
+ * @param curdev 当前视频设备结构体指针
  * @return int 
  */
 static int v4l2_parms_set(struct context *cnt, struct video_dev *curdev)
@@ -394,13 +394,13 @@ static int v4l2_parms_set(struct context *cnt, struct video_dev *curdev)
         return 0;
     }
 
-    for (indx_dev=0; indx_dev<curdev->devctrl_count; indx_dev++ ) {
-        devitem=&curdev->devctrl_array[indx_dev];
+    for (indx_dev = 0; indx_dev < curdev->devctrl_count; indx_dev++ ) {
+        devitem = &curdev->devctrl_array[indx_dev];
         devitem->ctrl_newval = devitem->ctrl_default;
-        for (indx_user=0; indx_user<cnt->vdev->params_count; indx_user++) {
-            usritem=&cnt->vdev->params_array[indx_user];
-            if ((mystrceq(devitem->ctrl_iddesc,usritem->param_name)) ||
-                (mystrceq(devitem->ctrl_name  ,usritem->param_name))) {
+        for (indx_user = 0; indx_user < cnt->vdev->params_count; indx_user++) {
+            usritem = &cnt->vdev->params_array[indx_user];
+            if ((mystrceq(devitem->ctrl_iddesc, usritem->param_name)) ||
+                (mystrceq(devitem->ctrl_name  , usritem->param_name))) {
                 switch (devitem->ctrl_type) {
                 case V4L2_CTRL_TYPE_MENU:
                     /*FALLTHROUGH*/
@@ -434,6 +434,14 @@ static int v4l2_parms_set(struct context *cnt, struct video_dev *curdev)
 
 }
 
+/**
+ * @brief V4L2设备图像亮度自动调节设置
+ * 
+ * @param cnt 
+ * @param curdev 
+ * @param method 
+ * @return int 
+ */
 static int v4l2_autobright(struct context *cnt, struct video_dev *curdev, int method)
 {
 
@@ -484,7 +492,7 @@ static int v4l2_autobright(struct context *cnt, struct video_dev *curdev, int me
 
     device_value = -1;
     for (indx = 0;indx < curdev->devctrl_count; indx++) {
-        devitem=&curdev->devctrl_array[indx];
+        devitem = &curdev->devctrl_array[indx];
         if ((method == 1) && (devitem->ctrl_id == V4L2_CID_BRIGHTNESS)) {
             device_value = devitem->ctrl_currval;
             parm_max = devitem->ctrl_maximum;
@@ -961,6 +969,12 @@ static int v4l2_pixfmt_select(struct context *cnt, struct video_dev *curdev)
     return -1;
 }
 
+/**
+ * @brief V4L2设备内存映射
+ * 
+ * @param curdev 当前视频设备结构体指针
+ * @return int 
+ */
 static int v4l2_mmap_set(struct video_dev *curdev)
 {
 
@@ -976,6 +990,7 @@ static int v4l2_mmap_set(struct video_dev *curdev)
 
     memset(&vid_source->req, 0, sizeof(struct v4l2_requestbuffers));
 
+    /* 申请4帧图像大小的buffer */
     vid_source->req.count = MMAP_BUFFERS;
     vid_source->req.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     vid_source->req.memory = V4L2_MEMORY_MMAP;
@@ -1044,7 +1059,7 @@ static int v4l2_mmap_set(struct video_dev *curdev)
         vid_source->buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
         vid_source->buf.memory = V4L2_MEMORY_MMAP;
         vid_source->buf.index = buffer_index;
-
+        /* 帧缓冲入队 */
         if (xioctl(vid_source, VIDIOC_QBUF, &vid_source->buf) == -1) {
             MOTION_LOG(ERR, TYPE_VIDEO, SHOW_ERRNO, "VIDIOC_QBUF");
             return -1;
@@ -1052,7 +1067,7 @@ static int v4l2_mmap_set(struct video_dev *curdev)
     }
 
     type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-
+    /* 开启视频采集 */
     if (xioctl(vid_source, VIDIOC_STREAMON, &type) == -1) {
         MOTION_LOG(ERR, TYPE_VIDEO, SHOW_ERRNO
             ,_("Error starting stream. VIDIOC_STREAMON"));
@@ -1062,6 +1077,13 @@ static int v4l2_mmap_set(struct video_dev *curdev)
     return 0;
 }
 
+/**
+ * @brief 图像大小设置，这里是最终确定后进行赋值
+ * 
+ * @param cnt 上下文结构体指针
+ * @param curdev 当前视频设备结构体指针
+ * @return int 
+ */
 static int v4l2_imgs_set(struct context *cnt, struct video_dev *curdev)
 {
     /* Set the items on the imgs */
@@ -1074,9 +1096,16 @@ static int v4l2_imgs_set(struct context *cnt, struct video_dev *curdev)
     cnt->conf.height = curdev->height;
 
     return 0;
-
 }
 
+/**
+ * @brief V4L2设备抓取一帧图像
+ * 
+ * @param cnt 上下文结构体指针
+ * @param curdev 当前视频设备结构体指针
+ * @param map 图像数据指针
+ * @return int 
+ */
 static int v4l2_capture(struct context *cnt, struct video_dev *curdev, unsigned char *map)
 {
 
@@ -1091,6 +1120,7 @@ static int v4l2_capture(struct context *cnt, struct video_dev *curdev, unsigned 
     height = cnt->conf.height;
 
     /* Block signals during IOCTL */
+    /* 保存原有的信号掩码，获取图像后需要还原 */
     sigemptyset(&set);
     sigaddset(&set, SIGCHLD);
     sigaddset(&set, SIGALRM);
@@ -1102,7 +1132,7 @@ static int v4l2_capture(struct context *cnt, struct video_dev *curdev, unsigned 
     /* Most MOTION_LOG statements are commented out to avoid spamming to regular users*/
     //MOTION_LOG(DBG, TYPE_VIDEO, NO_ERRNO
     //    ,_("1) vid_source->pframe %i"), vid_source->pframe);
-
+    /* 帧缓冲入队 */
     if (vid_source->pframe >= 0) {
         if (xioctl(vid_source, VIDIOC_QBUF, &vid_source->buf) == -1) {
             MOTION_LOG(ERR, TYPE_VIDEO, SHOW_ERRNO, "VIDIOC_QBUF");
@@ -1116,7 +1146,7 @@ static int v4l2_capture(struct context *cnt, struct video_dev *curdev, unsigned 
     vid_source->buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     vid_source->buf.memory = V4L2_MEMORY_MMAP;
     vid_source->buf.bytesused = 0;
-
+    /* 帧缓冲出队 */
     if (xioctl(vid_source, VIDIOC_DQBUF, &vid_source->buf) == -1) {
         /*
          * Some drivers return EIO when there is no signal,
@@ -1280,6 +1310,13 @@ static int v4l2_device_init(struct context *cnt, struct video_dev *curdev)
     return 0;
 }
 
+/**
+ * @brief 
+ * 
+ * @param cnt 上下文结构体指针
+ * @param curdev 当前视频设备结构体指针
+ * @param map 
+ */
 static void v4l2_device_select(struct context *cnt, struct video_dev *curdev, unsigned char *map)
 {
 
@@ -1570,8 +1607,8 @@ void v4l2_mutex_destroy(void)
 /**
  * @brief V4L2摄像头初始化
  * 
- * @param cnt 
- * @return int 
+ * @param cnt 上下文结构体指针
+ * @return int 返回V4L2设备文件句柄
  */
 int v4l2_start(struct context *cnt)
 {
@@ -1658,11 +1695,11 @@ int v4l2_start(struct context *cnt)
         if (retcd == 0) {
             retcd = v4l2_ctrls_set(curdev);
         }
-
+        /* 申请帧缓冲，开启视频采集 */
         if (retcd == 0) {
             retcd = v4l2_mmap_set(curdev);
         }
-
+        /* 图像尺寸参数更新 */
         if (retcd == 0) {
             retcd = v4l2_imgs_set(cnt, curdev);
         }
@@ -1769,13 +1806,20 @@ void v4l2_cleanup(struct context *cnt)
     #endif // HAVE_V4L2
 }
 
+/**
+ * @brief V4L2设备获取下一帧图像数据
+ * 
+ * @param cnt 上下文结构体指针
+ * @param img_data 图像数据
+ * @return int 
+ */
 int v4l2_next(struct context *cnt, struct image_data *img_data)
 {
     #ifdef HAVE_V4L2
         int ret = -2;
         struct config *conf = &cnt->conf;
         struct video_dev *dev;
-
+        /* 加锁 */
         pthread_mutex_lock(&v4l2_mutex);
         dev = video_devices;
         while (dev) {
@@ -1795,7 +1839,7 @@ int v4l2_next(struct context *cnt, struct image_data *img_data)
             dev->owner = cnt->threadnr;
             dev->frames = conf->roundrobin_frames;
         }
-
+        /* 动态调整视频设备参数 */
         v4l2_device_select(cnt, dev, img_data->image_norm);
         ret = v4l2_capture(cnt, dev, img_data->image_norm);
 

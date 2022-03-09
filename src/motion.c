@@ -101,6 +101,13 @@ unsigned int restart = 0;
  *
  * Returns:     nothing
  */
+
+/**
+ * @brief 
+ * 
+ * @param cnt 上下文结构体指针
+ * @param new_size 
+ */
 static void image_ring_resize(struct context *cnt, int new_size)
 {
     /*
@@ -837,6 +844,12 @@ static int init_camera_type(struct context *cnt)
 
 }
 
+
+/**
+ * @brief 
+ * 
+ * @param cnt 上下文结构体指针
+ */
 static void init_mask_privacy(struct context *cnt)
 {
 
@@ -946,6 +959,11 @@ static void init_mask_privacy(struct context *cnt)
 
 }
 
+/**
+ * @brief 图像OSD文本缩放初始化
+ * 
+ * @param cnt 上下文结构体指针
+ */
 static void init_text_scale(struct context *cnt)
 {
 
@@ -979,9 +997,13 @@ static void init_text_scale(struct context *cnt)
 
     /* If we had to modify the scale, change conf so we don't get another message */
     cnt->conf.text_scale = cnt->text_scale;
-
 }
 
+/**
+ * @brief motion视频流初始化
+ * 
+ * @param cnt 上下文结构体指针
+ */
 static void mot_stream_init(struct context *cnt)
 {
 
@@ -1060,7 +1082,7 @@ static void mot_stream_deinit(struct context *cnt)
  */
 
 /**
- * @brief 
+ * @brief motion初始化
  * 
  * @param cnt 上下文结构体指针
  * @return int 
@@ -1074,6 +1096,7 @@ static int motion_init(struct context *cnt)
     util_threadname_set("ml", cnt->threadnr, cnt->conf.camera_name);
 
     /* Store thread number in TLS. */
+    /* 存储线程号 */
     pthread_setspecific(tls_key_threadnr, (void *)((unsigned long)cnt->threadnr));
 
     cnt->currenttime_tm = mymalloc(sizeof(struct tm));
@@ -1154,6 +1177,7 @@ static int motion_init(struct context *cnt)
     }
 
     /* set the device settings */
+    /* 视频设备初始化 */
     cnt->video_dev = vid_start(cnt);
 
     /*
@@ -1202,8 +1226,10 @@ static int motion_init(struct context *cnt)
      */
     cnt->imgs.size_high = (cnt->imgs.width_high * cnt->imgs.height_high * 3) / 2;
 
+    /* 图像缓冲环初始化 */
     image_ring_resize(cnt, 1); /* Create a initial precapture ring buffer with 1 frame */
 
+    /* 为图像数据分配内存空间 */
     cnt->imgs.ref = mymalloc(cnt->imgs.size_norm);
     cnt->imgs.img_motion.image_norm = mymalloc(cnt->imgs.size_norm);
 
@@ -1222,7 +1248,7 @@ static int motion_init(struct context *cnt)
         cnt->imgs.image_virgin.image_high = mymalloc(cnt->imgs.size_high);
         cnt->imgs.preview_image.image_high = mymalloc(cnt->imgs.size_high);
     }
-
+    /* motion视频流初始化 */
     mot_stream_init(cnt);
 
     /* Set output picture type */
@@ -1252,14 +1278,15 @@ static int motion_init(struct context *cnt)
      *
      * rotate_init will set cap_width and cap_height in cnt->rotate_data.
      */
+    /* 图像旋转参数初始化 */
     rotate_init(cnt); /* rotate_deinit is called in main */
-
+    /* 图像OSD文本缩放初始化 */
     init_text_scale(cnt);   /*Initialize and validate the text_scale */
 
     /* Capture first image, or we will get an alarm on start */
     if (cnt->video_dev >= 0) {
         int i;
-
+        /* 尝试获取视频设备图像帧，重试5次后提示失败，初始化画面为灰色 */
         for (i = 0; i < 5; i++) {
             if (vid_next(cnt, &cnt->imgs.image_virgin) == 0) {
                 break;
@@ -1367,6 +1394,7 @@ static int motion_init(struct context *cnt)
     }
 
     /* Prevent first few frames from triggering motion... */
+    /* 过滤掉前面8帧图像 */
     cnt->moved = 8;
 
     /* Work out expected frame rate based on config setting */
@@ -1394,7 +1422,7 @@ static int motion_init(struct context *cnt)
         cnt->rolling_average_data[indx] = cnt->required_frame_time;
     }
 
-
+    /* 追踪装置暂时未启用 */
     cnt->track_posx = 0;
     cnt->track_posy = 0;
     if (cnt->track.type) {
@@ -1581,6 +1609,11 @@ static void motion_cleanup(struct context *cnt)
 
 }
 
+/**
+ * @brief 
+ * 
+ * @param cnt 
+ */
 static void mlp_mask_privacy(struct context *cnt)
 {
 
@@ -1694,6 +1727,12 @@ static void mlp_areadetect(struct context *cnt)
 
 }
 
+
+/**
+ * @brief 为新的图像帧做准备
+ * 
+ * @param cnt 上下文结构体指针
+ */
 static void mlp_prepare(struct context *cnt)
 {
 
@@ -1787,22 +1826,30 @@ static void mlp_prepare(struct context *cnt)
 
 }
 
+/**
+ * @brief 
+ * 
+ * @param cnt 上下文结构体指针
+ */
 static void mlp_resetimages(struct context *cnt)
 {
 
     struct image_data *old_image;
 
+    /* 一般不会设置帧之间的最小间隔时间，直接使用视频的帧率 */
     if (cnt->conf.minimum_frame_time) {
         cnt->minimum_frame_time_downcounter = cnt->conf.minimum_frame_time;
         cnt->get_image = 0;
     }
 
     /* ring_buffer_in is pointing to current pos, update before put in a new image */
+    /* 图像缓冲环接收索引增加 */
     if (++cnt->imgs.image_ring_in >= cnt->imgs.image_ring_size) {
         cnt->imgs.image_ring_in = 0;
     }
 
     /* Check if we have filled the ring buffer, throw away last image */
+    /* 当图像缓冲环满了的话丢弃一帧图像数据，即输出索引增加 */
     if (cnt->imgs.image_ring_in == cnt->imgs.image_ring_out) {
         if (++cnt->imgs.image_ring_out >= cnt->imgs.image_ring_size) {
             cnt->imgs.image_ring_out = 0;
@@ -1810,6 +1857,7 @@ static void mlp_resetimages(struct context *cnt)
     }
 
     /* cnt->current_image points to position in ring where to store image, diffs etc. */
+    /* 保存上一帧图像数据的指针，从缓冲环中取一帧新的图像数据 */
     old_image = cnt->current_image;
     cnt->current_image = &cnt->imgs.image_ring[cnt->imgs.image_ring_in];
 
@@ -1844,6 +1892,13 @@ static void mlp_resetimages(struct context *cnt)
 
 }
 
+
+/**
+ * @brief 
+ * 
+ * @param cnt 上下文结构体指针
+ * @return int 
+ */
 static int mlp_retry(struct context *cnt)
 {
 
@@ -1907,6 +1962,13 @@ static int mlp_retry(struct context *cnt)
     return 0;
 }
 
+
+/**
+ * @brief 获取一帧图像
+ * 
+ * @param cnt 
+ * @return int 
+ */
 static int mlp_capture(struct context *cnt)
 {
 
@@ -1948,6 +2010,7 @@ static int mlp_capture(struct context *cnt)
          * Save the newly captured still virgin image to a buffer
          * which we will not alter with text and location graphics
          */
+        /* 拷贝图像数据 */
         memcpy(cnt->imgs.image_virgin.image_norm, cnt->current_image->image_norm, cnt->imgs.size_norm);
 
         mlp_mask_privacy(cnt);
@@ -2069,6 +2132,11 @@ static int mlp_capture(struct context *cnt)
 
 }
 
+/**
+ * @brief 运动检测
+ * 
+ * @param cnt 上下文结构体指针
+ */
 static void mlp_detection(struct context *cnt)
 {
 
@@ -2190,6 +2258,11 @@ static void mlp_detection(struct context *cnt)
 
 }
 
+/**
+ * @brief 
+ * 
+ * @param cnt 上下文结构体指针
+ */
 static void mlp_tuning(struct context *cnt)
 {
 

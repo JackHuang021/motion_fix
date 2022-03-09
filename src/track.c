@@ -87,6 +87,17 @@ static unsigned int generic_move(struct context *cnt, enum track_action action, 
 
 
 /* Add a call to your functions here: */
+
+/**
+ * @brief 
+ * 
+ * @param cnt 上下文结构体指针
+ * @param dev 
+ * @param manual 
+ * @param xoff 
+ * @param yoff 
+ * @return unsigned int 
+ */
 unsigned int track_center(struct context *cnt, int dev, unsigned int manual, int xoff, int yoff)
 {
     struct coord cent;

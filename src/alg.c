@@ -981,6 +981,14 @@ void alg_tune_smartmask(struct context *cnt)
  * alg_diff_standard
  *
  */
+
+/**
+ * @brief 
+ * 
+ * @param cnt 上下文结构体指针
+ * @param new 图像数据
+ * @return int 
+ */
 int alg_diff_standard(struct context *cnt, unsigned char *new)
 {
     struct images *imgs = &cnt->imgs;
@@ -1274,6 +1282,15 @@ int alg_diff_standard(struct context *cnt, unsigned char *new)
  * alg_diff_fast
  *      Very fast diff function, does not apply mask overlaying.
  */
+
+/**
+ * @brief 快速帧间差检测
+ * 
+ * @param cnt 
+ * @param max_n_changes 
+ * @param new 
+ * @return char 
+ */
 static char alg_diff_fast(struct context *cnt, int max_n_changes, unsigned char *new)
 {
     struct images *imgs = &cnt->imgs;
@@ -1308,6 +1325,14 @@ static char alg_diff_fast(struct context *cnt, int max_n_changes, unsigned char 
  * alg_diff
  *      Uses diff_fast to quickly decide if there is anything worth
  *      sending to diff_standard.
+ */
+
+/**
+ * @brief 
+ * 
+ * @param cnt 上下文结构体指针
+ * @param new 图像数据
+ * @return int 
  */
 int alg_diff(struct context *cnt, unsigned char *new)
 {
@@ -1400,6 +1425,13 @@ int alg_switchfilter(struct context *cnt, int diffs, unsigned char *newimg)
  */
 #define ACCEPT_STATIC_OBJECT_TIME 10  /* Seconds */
 #define EXCLUDE_LEVEL_PERCENT 20
+
+/**
+ * @brief 
+ * 
+ * @param cnt 上下文结构体指针
+ * @param action 
+ */
 void alg_update_reference_frame(struct context *cnt, int action)
 {
     int accept_timer = cnt->lastrate * ACCEPT_STATIC_OBJECT_TIME;

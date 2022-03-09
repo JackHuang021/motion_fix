@@ -172,6 +172,15 @@ static void vlp_show_vfmt(struct v4l2_format *v)
     MOTION_LOG(INF, TYPE_VIDEO, NO_ERRNO, "------------------------");
 }
 
+
+/**
+ * @brief 
+ * 
+ * @param dev_name 
+ * @param width 
+ * @param height 
+ * @return int 
+ */
 int vlp_startpipe(const char *dev_name, int width, int height)
 {
     int dev;
