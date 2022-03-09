@@ -1207,6 +1207,12 @@ int draw_text(unsigned char *image, int width, int height, int startx, int start
 /**
  * initialize_chars
  */
+
+/**
+ * @brief 
+ * 
+ * @return int 
+ */
 int initialize_chars(void)
 {
     unsigned int i;

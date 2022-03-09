@@ -2917,6 +2917,12 @@ struct context **conf_load(struct context **cnt)
  *
  * Returns nothing
  */
+
+/**
+ * @brief 
+ * 
+ * @param cnt 上下文结构体指针
+ */
 void conf_output_parms(struct context **cnt)
 {
     unsigned int i, t = 0;

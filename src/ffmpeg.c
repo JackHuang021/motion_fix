@@ -1367,6 +1367,11 @@ static void ffmpeg_put_pix_yuv420(struct ffmpeg *ffmpeg, struct image_data *img_
  ****************************************************************************
  ****************************************************************************/
 
+
+/**
+ * @brief ffmpeg 初始化
+ * 
+ */
 void ffmpeg_global_init(void)
 {
     #ifdef HAVE_FFMPEG

@@ -504,6 +504,12 @@ void vid_greytoyuv420p(unsigned char *map, unsigned char *cap_map, int width, in
 /* vid_parms_parse
  * Parse the video_params into an array.
 */
+
+/**
+ * @brief 
+ * 
+ * @param cnt 
+ */
 void vid_parms_parse(struct context *cnt)
 {
 
@@ -616,6 +622,13 @@ void vid_close(struct context *cnt)
  *     device number
  *     -1 if failed to open device.
  *     -3 image dimensions are not modulo 8
+ */
+
+/**
+ * @brief 摄像设备初始化
+ * 
+ * @param cnt 上下文结构体指针
+ * @return int 
  */
 int vid_start(struct context *cnt)
 {

@@ -614,6 +614,14 @@ size_t mystrftime(const struct context *cnt, char *s, size_t max, const char *us
 /* This is a temporary location for these util functions.  All the generic utility
  * functions will be collected here and ultimately moved into a new common "util" module
  */
+
+/**
+ * @brief 设置线程名称
+ * 
+ * @param abbr 
+ * @param threadnbr 
+ * @param threadname 
+ */
 void util_threadname_set(const char *abbr, int threadnbr, const char *threadname)
 {
     /* When the abbreviation is sent in as null, that means we are being
@@ -715,6 +723,15 @@ void util_trim(char *parm)
 /* util_parms_add
  * Add the parsed out parameter and value to the control array.
 */
+
+/**
+ * @brief 向参数结构体中添加一条配置参数
+ * 
+ * @param parameters 
+ * @param parm_nm 
+ * @param parm_vl 
+ * @param logmsg 
+ */
 static void util_parms_add(struct params_context *parameters
             , const char *parm_nm, const char *parm_vl, int logmsg)
 {
@@ -871,6 +888,14 @@ static void util_parms_next(char *parmlne, size_t indxpr_st, size_t indxpr_en)
 /* util_parms_parse_qte
  * Split out the parameters that have quotes around the name.
 */
+
+/**
+ * @brief 
+ * 
+ * @param parameters 
+ * @param parmlne 
+ * @param logmsg 
+ */
 static void util_parms_parse_qte(struct params_context *parameters, char *parmlne, int logmsg)
 {
     size_t indxnm_st, indxnm_en, indxvl_st, indxvl_en;
@@ -995,6 +1020,12 @@ static void util_parms_parse_comma(struct params_context *parameters, char *parm
 /* util_parms_free
  * Free all the memory associated with the parameter control array.
 */
+
+/**
+ * @brief 清除指定的全部配置参数
+ * 
+ * @param parameters 参数结构体指针
+ */
 void util_parms_free(struct params_context *parameters)
 {
     int indx;
@@ -1027,6 +1058,14 @@ void util_parms_free(struct params_context *parameters)
 /* util_parms_parse
  * Parse the user provided string of parameters into a array.
 */
+
+/**
+ * @brief 解析配置参数
+ * 
+ * @param parameters 
+ * @param confparm 
+ * @param logmsg 
+ */
 void util_parms_parse(struct params_context *parameters, char *confparm, int logmsg)
 {
     /* Parse through the configuration option to get values
@@ -1042,6 +1081,7 @@ void util_parms_parse(struct params_context *parameters, char *confparm, int log
     size_t indxnm_st, indxnm_en, indxvl_st, indxvl_en;
     char *parmlne;
 
+    /* 先清除参数结构体内的所有内容 */
     util_parms_free(parameters);
     parmlne = NULL;
 

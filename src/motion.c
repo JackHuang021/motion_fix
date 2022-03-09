@@ -1058,6 +1058,13 @@ static void mot_stream_deinit(struct context *cnt)
  *             -2 Fatal error, open SQL database error
  *             -3 Fatal error, image dimensions are not modulo 8
  */
+
+/**
+ * @brief 
+ * 
+ * @param cnt 上下文结构体指针
+ * @return int 
+ */
 static int motion_init(struct context *cnt)
 {
     FILE *picture;
@@ -1108,7 +1115,7 @@ static int motion_init(struct context *cnt)
         return -3;
     }
 
-    /* 仅针对RTSP类型摄像头使能passthrough */
+    /* 非RTSP类型摄像头关闭passthrough */
     if ((cnt->camera_type != CAMERA_TYPE_RTSP) && (cnt->movie_passthrough)) {
         MOTION_LOG(WRN, TYPE_ALL, NO_ERRNO,_("Pass-through processing disabled."));
         cnt->movie_passthrough = FALSE;
@@ -2907,6 +2914,10 @@ static void become_daemon(void)
     struct sigaction sig_ign_action;
 
     /* Setup sig_ign_action */
+    /*
+     * 一旦给信号设置了SA_RESTART标记，那么当执行某个阻塞系统调用时，
+     * 收到该信号时，进程不会返回，而是重新执行该系统调用。
+     */
     #ifdef SA_RESTART
         sig_ign_action.sa_flags = SA_RESTART;
     #else
@@ -2915,7 +2926,7 @@ static void become_daemon(void)
     sig_ign_action.sa_handler = SIG_IGN;
     sigemptyset(&sig_ign_action.sa_mask);
 
-    /* fork */
+    /* fork 返回子进程ID，创建子进程终止父进程 */
     if (fork()) {
         MOTION_LOG(NTC, TYPE_ALL, NO_ERRNO, _("Motion going to daemon mode"));
         exit(0);
@@ -2927,6 +2938,7 @@ static void become_daemon(void)
      * later when we have closed stdout. Otherwise Motion hangs in the terminal waiting
      * for an enter.
      */
+    /* 单例模式运行，打开pid file，将进程号写入文件中 */
     if (cnt_list[0]->conf.pid_file) {
         pidf = myfopen(cnt_list[0]->conf.pid_file, "w+");
 
@@ -2948,11 +2960,13 @@ static void become_daemon(void)
      * Changing dir to root enables people to unmount a disk
      * without having to stop Motion
      */
+    /* 将工作目录修改为根目录 */
     if (chdir("/")) {
         MOTION_LOG(ERR, TYPE_ALL, SHOW_ERRNO, _("Could not change directory"));
     }
 
 
+    /* 将当前进程设置为进程组的组长进程 */
     #if (defined(BSD) && !defined(__APPLE__))
         setpgrp(0, getpid());
     #else
@@ -2965,6 +2979,7 @@ static void become_daemon(void)
         close(i);
     }
 
+    /* 创建一个新会话 */
     setsid();
     i = open("/dev/null", O_RDONLY);
 
@@ -2975,6 +2990,7 @@ static void become_daemon(void)
 
     i = open("/dev/null", O_WRONLY);
 
+    /* 将守护进程的标准输入、标准输出、以及标准错误重定向到 /dev/null */
     if (i != -1) {
         dup2(i, STDOUT_FILENO);
         dup2(i, STDERR_FILENO);
@@ -2988,6 +3004,11 @@ static void become_daemon(void)
             ,cnt_list[0]->conf.pid_file, getpid());
     }
 
+    /* unix环境下，当一个进程以后台形式启动，但尝试去读写控制台终端时，
+     * 将会触发 SIGTTIN（读） 和 SIGTTOU（写）信号量，接着，进程将会
+     * 暂停（linux默认），read/write将会返回错误。
+     * SIGTSTP 使进程暂停的信号，这里将其忽略
+     */
     sigaction(SIGTTOU, &sig_ign_action, NULL);
     sigaction(SIGTTIN, &sig_ign_action, NULL);
     sigaction(SIGTSTP, &sig_ign_action, NULL);
@@ -3051,6 +3072,11 @@ static void motion_shutdown(void)
     vid_mutex_destroy();
 }
 
+
+/**
+ * @brief 设置摄像头id
+ * 
+ */
 static void motion_camera_ids(void)
 {
     /* Set the camera id's on the context.  They must be unique */
@@ -3093,6 +3119,10 @@ static void motion_camera_ids(void)
     }
 }
 
+/**
+ * @brief 打印当前的系统环境
+ * 
+ */
 static void motion_ntc(void)
 {
 
@@ -3264,14 +3294,15 @@ static void motion_startup(int daemonize, int argc, char *argv[])
 
     conf_output_parms(cnt_list);
 
+    /* 打印当前系统环境 */
     motion_ntc();
     /* 摄像头id赋值 */
     motion_camera_ids();
-
+    /* 初始化osd字符 */
     initialize_chars();
-
+    /* 初始化web服务 */
     webu_start(cnt_list);
-
+    /* 初始化video dev互斥量 */
     vid_mutex_init();
 
 }
@@ -3578,12 +3609,13 @@ int main (int argc, char **argv)
     /* 处理外部信号和子线程信号 */
     setup_signals();
 
+    /* 进行参数解析，日志配置，守护进程，web服务 初始化 */
     motion_startup(1, argc, argv);
-
+    /* ffmpeg初始化 */
     ffmpeg_global_init();
-
+    /* 数据库初始化 */
     dbse_global_init(cnt_list);
-
+    /* 文本翻译初始化 */
     translate_init();
 
     do {

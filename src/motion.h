@@ -422,7 +422,7 @@ struct context {
     /* bktr and v4l2 params used for round robin */
     int param_input;
     long param_freq;
-    int param_norm;
+    int param_norm;                         /* V4L2设备视频标准 */
 
     /* Commands to the motion thread */
     volatile unsigned int snapshot;    /* Make a snapshot */
