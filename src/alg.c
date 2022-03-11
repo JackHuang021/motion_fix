@@ -38,6 +38,15 @@
  * alg_locate_center_size
  *      Locates the center and size of the movement.
  */
+
+/**
+ * @brief 
+ * 
+ * @param imgs 上下文结构体中图像数据的指针
+ * @param width 图像宽度
+ * @param height 图像高度
+ * @param cent 运动区域坐标结构体指针
+ */
 void alg_locate_center_size(struct images *imgs, int width, int height, struct coord *cent)
 {
     unsigned char *out = imgs->img_motion.image_norm;
@@ -66,6 +75,7 @@ void alg_locate_center_size(struct images *imgs, int width, int height, struct c
 
     } else {
         /* Locate movement */
+        /* 标记运动物体位置 */
         for (y = 0; y < height; y++) {
             for (x = 0; x < width; x++) {
                 if (*(out++)) {
@@ -77,7 +87,7 @@ void alg_locate_center_size(struct images *imgs, int width, int height, struct c
         }
 
     }
-
+    /* 计算运动物体中间位置坐标 */
     if (centc) {
         cent->x = cent->x / centc;
         cent->y = cent->y / centc;
@@ -130,7 +140,7 @@ void alg_locate_center_size(struct images *imgs, int width, int height, struct c
         }
 
     }
-
+    /* 计算运动物体位置尺寸 */
     if (centc) {
         cent->minx = cent->x - xdist / centc * 2;
         cent->maxx = cent->x + xdist / centc * 2;
@@ -181,7 +191,6 @@ void alg_locate_center_size(struct images *imgs, int width, int height, struct c
      * to match the correction to include a persons head that we just did above.
      */
     cent->y = (cent->miny + cent->maxy) / 2;
-
 }
 
 
@@ -417,6 +426,14 @@ void alg_noise_tune(struct context *cnt, unsigned char *new)
  * alg_threshold_tune
  *
  */
+
+/**
+ * @brief 
+ * 
+ * @param cnt 上下文结构体指针
+ * @param diffs 像素差总数
+ * @param motion 
+ */
 void alg_threshold_tune(struct context *cnt, int diffs, int motion)
 {
     int i;
@@ -549,6 +566,13 @@ static int iflood(int x, int y, int width, int height,
  * alg_labeling
  *
  */
+
+/**
+ * @brief 
+ * 
+ * @param cnt 
+ * @return int 
+ */
 static int alg_labeling(struct context *cnt)
 {
     struct images *imgs = &cnt->imgs;
@@ -627,6 +651,16 @@ static int alg_labeling(struct context *cnt)
 /**
  * dilate9
  *      Dilates a 3x3 box.
+ */
+
+/**
+ * @brief 
+ * 
+ * @param img 
+ * @param width 
+ * @param height 
+ * @param buffer 
+ * @return int 
  */
 static int dilate9(unsigned char *img, int width, int height, void *buffer)
 {
@@ -790,27 +824,46 @@ static int dilate5(unsigned char *img, int width, int height, void *buffer)
  * erode9
  *      Erodes a 3x3 box.
  */
+
+/**
+ * @brief 去除正方形杂点
+ * 
+ * @param img 图像数据
+ * @param width 图像宽度
+ * @param height 图像高度
+ * @param buffer 
+ * @param flag 
+ * @return int 
+ */
 static int erode9(unsigned char *img, int width, int height, void *buffer, unsigned char flag)
 {
     int y, i, sum = 0;
     char *Row1,*Row2,*Row3;
 
+    /* 第一行图像数据 */
     Row1 = buffer;
+    /* 第二行图像数据 */
     Row2 = Row1 + width;
+    /* 第三行图像数据 */
     Row3 = Row1 + 2 * width;
+    /* 第二行数据清零 */
     memset(Row2, flag, width);
+    /* 第三行数据赋值原始图像数据的第一行数据 */
     memcpy(Row3, img, width);
 
     for (y = 0; y < height; y++) {
+        /* 第一行数据赋值为上上行图像数据 */
         memcpy(Row1, Row2, width);
+        /* 第二行数据赋值为上一行的图像数据 */
         memcpy(Row2, Row3, width);
 
         if (y == height-1) {
             memset(Row3, flag, width);
         } else {
+            /* 更新新一行的图像数据 */
             memcpy(Row3, img + (y+1) * width, width);
         }
-
+        /* 对三行的数据进行分析 */
         for (i = width - 2; i >= 1; i--) {
             if (Row1[i - 1] == 0 ||
                 Row1[i]     == 0 ||
@@ -826,7 +879,7 @@ static int erode9(unsigned char *img, int width, int height, void *buffer, unsig
                 sum++;
             }
         }
-
+        /* 对每行最右侧的数据清零 */
         img[y * width] = img[y * width + width - 1] = flag;
     }
     return sum;
@@ -835,6 +888,17 @@ static int erode9(unsigned char *img, int width, int height, void *buffer, unsig
 /**
  * erode5
  *      Erodes in a + shape.
+ */
+
+/**
+ * @brief 
+ * 
+ * @param img 
+ * @param width 
+ * @param height 
+ * @param buffer 
+ * @param flag 
+ * @return int 
  */
 static int erode5(unsigned char *img, int width, int height, void *buffer, unsigned char flag)
 {
@@ -877,6 +941,14 @@ static int erode5(unsigned char *img, int width, int height, void *buffer, unsig
 /**
  * alg_despeckle
  *      Despeckling routine to remove noisy detections.
+ */
+
+/**
+ * @brief 去除杂点
+ * 
+ * @param cnt 上下文结构体指针
+ * @param olddiffs 原像素差总数
+ * @return int 
  */
 int alg_despeckle(struct context *cnt, int olddiffs)
 {
@@ -934,6 +1006,12 @@ int alg_despeckle(struct context *cnt, int olddiffs)
 /**
  * alg_tune_smartmask
  *      Generates actual smartmask. Calculate sensitivity based on motion.
+ */
+
+/**
+ * @brief 
+ * 
+ * @param cnt 
  */
 void alg_tune_smartmask(struct context *cnt)
 {
@@ -1012,6 +1090,7 @@ int alg_diff_standard(struct context *cnt, unsigned char *new)
      * written anyway seems to be beneficial in terms of speed. Perhaps a
      * cache thing?
      */
+    /* 每次进行运动检测前清空运动物体图像数据 */
     memset(out, 0, i);
 
     #ifdef HAVE_MMX
@@ -1332,7 +1411,7 @@ static char alg_diff_fast(struct context *cnt, int max_n_changes, unsigned char 
  * 
  * @param cnt 上下文结构体指针
  * @param new 图像数据
- * @return int 
+ * @return int 返回像素差总数
  */
 int alg_diff(struct context *cnt, unsigned char *new)
 {
@@ -1351,6 +1430,14 @@ int alg_diff(struct context *cnt, unsigned char *new)
  *      It is assumed to be the light being switched on or a camera displacement.
  *      In any way the user doesn't think it is worth capturing.
  */
+
+/**
+ * @brief 图像亮度变化检测，检测是否瞬间有环境亮度较大变化
+ * 
+ * @param cnt 上下文结构体指针
+ * @param diffs 当前图像变化的像素差
+ * @return int 返回1表示侦测有亮度变化
+ */
 int alg_lightswitch(struct context *cnt, int diffs)
 {
     struct images *imgs = &cnt->imgs;
@@ -1363,6 +1450,7 @@ int alg_lightswitch(struct context *cnt, int diffs)
     }
 
     /* Is lightswitch percent of the image changed? */
+    /* 该算法简单的计算当前像素变化的百分比是否大于设定值 */
     if (diffs > (imgs->motionsize * cnt->conf.lightswitch_percent / 100)) {
         return 1;
     }

@@ -275,7 +275,7 @@ void vid_bayer2rgb24(unsigned char *dst, unsigned char *src, long int width, lon
 
 
 /**
- * @brief 
+ * @brief YUYV转YUV420P，UV分量采取上下两行的平均值
  * 
  * @param map 目的图像内存区
  * @param cap_map 抓取的图像内存区
@@ -288,6 +288,8 @@ void vid_yuv422to420p(unsigned char *map, unsigned char *cap_map, int width, int
     int i, j;
 
     /* Create the Y plane. */
+    /* Y分量赋值，每隔两个字节是Y分量存储位置 */
+    /* 一个像素包含一个Y分量 */
     src = cap_map;
     dest = map;
     for (i = width * height; i > 0; i--) {
@@ -295,9 +297,13 @@ void vid_yuv422to420p(unsigned char *map, unsigned char *cap_map, int width, int
         src += 2;
     }
     /* Create U and V planes. */
+    /* 第一行图像U分量位置 */
     src = cap_map + 1;
+    /* 第二行图像U分量位置 */
     src2 = cap_map + width * 2 + 1;
+    /* 目标图像U分量起始位置 */
     dest = map + width * height;
+    /* 目标图像V分量起始位置 */
     dest2 = dest + (width * height) / 4;
     for (i = height / 2; i > 0; i--) {
         for (j = width / 2; j > 0; j--) {
@@ -736,7 +742,7 @@ int vid_start(struct context *cnt)
  * 
  * @param cnt 上下文结构体指针
  * @param img_data 图像数据结构体指针
- * @return int 
+ * @return int 返回0表示成功获得一帧图像
  */
 int vid_next(struct context *cnt, struct image_data *img_data)
 {

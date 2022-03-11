@@ -853,6 +853,15 @@ void put_picture(struct context *cnt, char *file, unsigned char *image, int ftyp
  *      Get the pgm file used as fixed mask
  *
  */
+
+/**
+ * @brief 解析pgm格式遮罩文件
+ * 
+ * @param picture 文件句柄
+ * @param width 图像宽度
+ * @param height 图像高度
+ * @return unsigned char* 返回pgm图像数据 
+ */
 unsigned char *get_pgm(FILE *picture, int width, int height)
 {
     int x, y, mask_width, mask_height, maxval;
@@ -916,7 +925,6 @@ unsigned char *get_pgm(FILE *picture, int width, int height)
         for (x = 0; x < mask_width; x++) {
             image[y * mask_width + x] = (int)image[y * mask_width + x] * 255 / maxval;
         }
-
     }
 
     /* Resize mask if required */

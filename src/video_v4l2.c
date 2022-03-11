@@ -1087,7 +1087,7 @@ static int v4l2_mmap_set(struct video_dev *curdev)
 static int v4l2_imgs_set(struct context *cnt, struct video_dev *curdev)
 {
     /* Set the items on the imgs */
-
+    /* 在这里设定图像的尺寸为视频设备图像的尺寸 */
     cnt->imgs.width = curdev->width;
     cnt->imgs.height = curdev->height;
     cnt->imgs.motionsize = cnt->imgs.width * cnt->imgs.height;

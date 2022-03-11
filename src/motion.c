@@ -103,10 +103,10 @@ unsigned int restart = 0;
  */
 
 /**
- * @brief 
+ * @brief 重新设置图像缓冲环大小
  * 
  * @param cnt 上下文结构体指针
- * @param new_size 
+ * @param new_size 图像缓冲环新的大小
  */
 static void image_ring_resize(struct context *cnt, int new_size)
 {
@@ -541,6 +541,14 @@ void motion_remove_pid(void)
  *   dev      - video device file descriptor
  *   img      - pointer to the captured image_data with detected motion
  */
+
+/**
+ * @brief 
+ * 
+ * @param cnt 上下文结构体指针
+ * @param dev 
+ * @param img 当前图像数据
+ */
 static void motion_detected(struct context *cnt, int dev, struct image_data *img)
 {
     struct config *conf = &cnt->conf;
@@ -549,6 +557,7 @@ static void motion_detected(struct context *cnt, int dev, struct image_data *img
     int indx;
 
     /* Draw location */
+    /* 在运动物体上画图案 */
     if (cnt->locate_motion_mode == LOCATE_ON) {
 
         if (cnt->locate_motion_style == LOCATE_BOX) {
@@ -860,7 +869,6 @@ static void init_mask_privacy(struct context *cnt)
     int indx_width, indx_height;
     unsigned char *img_temp, *img_temp_uv;
 
-
     FILE *picture;
 
     /* Load the privacy file if any */
@@ -869,6 +877,7 @@ static void init_mask_privacy(struct context *cnt)
     cnt->imgs.mask_privacy_high = NULL;
     cnt->imgs.mask_privacy_high_uv = NULL;
 
+    /* 设置隐私遮罩文件 */
     if (cnt->conf.mask_privacy) {
         if ((picture = myfopen(cnt->conf.mask_privacy, "r"))) {
             MOTION_LOG(INF, TYPE_ALL, NO_ERRNO, _("Opening privacy mask file"));
@@ -877,9 +886,11 @@ static void init_mask_privacy(struct context *cnt)
              * applies to the already rotated image, not the capture image. Thus, use
              * width and height from imgs.
              */
+            /* 解析隐私遮罩文件数据 */
             cnt->imgs.mask_privacy = get_pgm(picture, cnt->imgs.width, cnt->imgs.height);
 
             /* We only need the "or" mask for the U & V chrominance area.  */
+            /* 保存UV色度图像数据 */
             cnt->imgs.mask_privacy_uv = mymalloc((cnt->imgs.height * cnt->imgs.width) / 2);
             if (cnt->imgs.size_high > 0) {
                 MOTION_LOG(INF, TYPE_ALL, NO_ERRNO
@@ -1102,6 +1113,7 @@ static int motion_init(struct context *cnt)
     cnt->currenttime_tm = mymalloc(sizeof(struct tm));
     cnt->eventtime_tm = mymalloc(sizeof(struct tm));
     /* Init frame time */
+    /* 获取当前帧时间，精度秒 */
     cnt->currenttime = time(NULL);
     localtime_r(&cnt->currenttime, cnt->currenttime_tm);
 
@@ -1202,6 +1214,7 @@ static int motion_init(struct context *cnt)
         return -3;
     }
     /* Revalidate we got a valid image size */
+    /* 判断图像设备的尺寸是否有效 */
     if ((cnt->imgs.width % 8) || (cnt->imgs.height % 8)) {
         MOTION_LOG(CRT, TYPE_NETCAM, NO_ERRNO
             ,_("Image width (%d) or height(%d) requested is not modulo 8.")
@@ -1224,6 +1237,7 @@ static int motion_init(struct context *cnt)
     /* We set size_high here so that it can be used in the retry function to determine whether
      * we need to break and reallocate buffers
      */
+    /* size_high赋值，高分辨率图像字节大小 */
     cnt->imgs.size_high = (cnt->imgs.width_high * cnt->imgs.height_high * 3) / 2;
 
     /* 图像缓冲环初始化 */
@@ -1374,7 +1388,7 @@ static int motion_init(struct context *cnt)
     } else {
         cnt->imgs.mask = NULL;
     }
-
+    /* 初始化mask */
     init_mask_privacy(cnt);
 
     /* Always initialize smart_mask - someone could turn it on later... */
@@ -1610,9 +1624,9 @@ static void motion_cleanup(struct context *cnt)
 }
 
 /**
- * @brief 
+ * @brief 给当前图像加上隐私掩码，不显示掩码部分的图像
  * 
- * @param cnt 
+ * @param cnt 上下文结构体指针
  */
 static void mlp_mask_privacy(struct context *cnt)
 {
@@ -1670,7 +1684,7 @@ static void mlp_mask_privacy(struct context *cnt)
             *(image++) &= *(mask++);
         }
 
-        /* Mask chrominance. */
+        /* Mask chrominance. 对UV色度进行掩码 */
         while (index_crcb >= increment) {
             index_crcb -= increment;
             /*
@@ -1729,7 +1743,7 @@ static void mlp_areadetect(struct context *cnt)
 
 
 /**
- * @brief 为新的图像帧做准备
+ * @brief 计算帧率、获取当前时间，以及当前秒时间内的帧数
  * 
  * @param cnt 上下文结构体指针
  */
@@ -1755,6 +1769,7 @@ static void mlp_prepare(struct context *cnt)
      * Calculate detection rate limit. Above 5fps we limit the detection
      * rate to 3fps to reduce load at higher framerates.
      */
+    /* 每秒处理3帧图像 */
     cnt->process_thisframe = 0;
     cnt->rate_limit++;
     if (cnt->rate_limit >= (cnt->lastrate / 3)) {
@@ -1787,12 +1802,14 @@ static void mlp_prepare(struct context *cnt)
     }
 
     /* Get time for current frame */
+    /* 获取当前时间，1970到现在的秒数 */
     cnt->currenttime = time(NULL);
 
     /*
      * localtime returns static data and is not threadsafe
      * so we use localtime_r which is reentrant and threadsafe
      */
+    /* 转换为本地时间 */
     localtime_r(&cnt->currenttime, cnt->currenttime_tm);
 
     /*
@@ -1801,10 +1818,12 @@ static void mlp_prepare(struct context *cnt)
      * is used as the ffmpeg framerate when motion is detected.
      */
     if (cnt->lastframetime != cnt->currenttime) {
+        /* 计算上一秒的帧率 */
         cnt->lastrate = cnt->shots + 1;
-        cnt->shots = -1;
+        /* 清空帧数为下一秒做准备 */
+        cnt->shots = -1; 
         cnt->lastframetime = cnt->currenttime;
-
+        /* 最小帧间时间一般不会设置 */
         if (cnt->conf.minimum_frame_time) {
             cnt->minimum_frame_time_downcounter--;
             if (cnt->minimum_frame_time_downcounter == 0) {
@@ -1817,17 +1836,16 @@ static void mlp_prepare(struct context *cnt)
 
 
     /* Increase the shots variable for each frame captured within this second */
+    /* 当前秒时间内对获取帧数进行递增 */
     cnt->shots++;
 
     if (cnt->startup_frames > 0) {
         cnt->startup_frames--;
     }
-
-
 }
 
 /**
- * @brief 
+ * @brief 从图像环中获取一帧图像数据，并填充时间、帧数等基本参数
  * 
  * @param cnt 上下文结构体指针
  */
@@ -1862,8 +1880,10 @@ static void mlp_resetimages(struct context *cnt)
     cnt->current_image = &cnt->imgs.image_ring[cnt->imgs.image_ring_in];
 
     /* Init/clear current_image */
+    /* 每秒处理三帧图像 */
     if (cnt->process_thisframe) {
         /* set diffs to 0 now, will be written after we calculated diffs in new image */
+        /* 清零当前图像运动检测相关变量 */
         cnt->current_image->diffs = 0;
 
         /* Set flags to 0 */
@@ -1875,6 +1895,7 @@ static void mlp_resetimages(struct context *cnt)
         cnt->current_image->total_labels = 0;
     } else if (cnt->current_image && old_image) {
         /* not processing this frame: save some important values for next image */
+        /* 当前帧非处理帧，直接赋值上一个帧的运动检测数据 */
         cnt->current_image->diffs = old_image->diffs;
         cnt->current_image->timestamp_tv = old_image->timestamp_tv;
         cnt->current_image->shot = old_image->shot;
@@ -1885,16 +1906,17 @@ static void mlp_resetimages(struct context *cnt)
     }
 
     /* Store time with pre_captured image */
+    /* 获取当前系统时间，获得的时间精确到微秒量级 */
     gettimeofday(&cnt->current_image->timestamp_tv, NULL);
 
     /* Store shot number with pre_captured image */
+    /* 记录该图像在当前秒内的帧数计数 */
     cnt->current_image->shot = cnt->shots;
-
 }
 
 
 /**
- * @brief 
+ * @brief 对视频设备每隔10s进行重新启动
  * 
  * @param cnt 上下文结构体指针
  * @return int 
@@ -1966,12 +1988,11 @@ static int mlp_retry(struct context *cnt)
 /**
  * @brief 获取一帧图像
  * 
- * @param cnt 
+ * @param cnt 上下文结构体指针
  * @return int 
  */
 static int mlp_capture(struct context *cnt)
 {
-
     const char *tmpin;
     char tmpout[80];
     int vid_return_code = 0;        /* Return code used when calling vid_next */
@@ -1986,6 +2007,7 @@ static int mlp_capture(struct context *cnt)
      * <0 = fatal error - leave the thread by breaking out of the main loop
      * >0 = non fatal error - copy last image or show grey image with message
      */
+    /* 获取一帧图像，保存在current_image->image_norm中 */
     if (cnt->video_dev >= 0) {
         vid_return_code = vid_next(cnt, cnt->current_image);
     } else {
@@ -2010,11 +2032,11 @@ static int mlp_capture(struct context *cnt)
          * Save the newly captured still virgin image to a buffer
          * which we will not alter with text and location graphics
          */
-        /* 拷贝图像数据 */
+        /* 拷贝图像数据到image_virgin */
         memcpy(cnt->imgs.image_virgin.image_norm, cnt->current_image->image_norm, cnt->imgs.size_norm);
-
+        /* 对当前图像进行隐私掩码，不显示掩码处的图像 */
         mlp_mask_privacy(cnt);
-
+        /* 拷贝图像数据到image_vprvcy */
         memcpy(cnt->imgs.image_vprvcy.image_norm, cnt->current_image->image_norm, cnt->imgs.size_norm);
 
         /*
@@ -2152,6 +2174,8 @@ static void mlp_detection(struct context *cnt)
      * fraction of the pixels. If this detects possible motion alg_diff_standard
      * is called.
      */
+    /* 主要是检测不同像素的差值，像素差大于noise，且差的总数大于threshold则认为有运动 */
+    /* 每秒处理三帧图像检测运动物体 */
     if (cnt->process_thisframe) {
         if (cnt->threshold && !cnt->pause) {
             /*
@@ -2172,6 +2196,8 @@ static void mlp_detection(struct context *cnt)
              * 'lightswitch_frames' frames to allow the camera to settle.
              * Don't check if we have lost connection, we detect "Lost signal" frame as lightswitch
              */
+            /* 检测瞬间的亮度变化，如突然关灯或开灯导致的像素改变 */
+            /* 当图像的亮度变化百分比区域大于该值时，禁用运动检测 */
             if (cnt->conf.lightswitch_percent >= 1 && !cnt->lost_connection) {
                 if (alg_lightswitch(cnt, cnt->current_image->diffs)) {
                     MOTION_LOG(INF, TYPE_ALL, NO_ERRNO, _("Lightswitch detected"));
@@ -2200,6 +2226,7 @@ static void mlp_detection(struct context *cnt)
              * We do not suspend motion detection like we did for lightswitch
              * because with Round Robin this is controlled by roundrobin_skip.
              */
+            /* 检测切换视频输入时的误检测 */
             if (cnt->conf.roundrobin_switchfilter && cnt->current_image->diffs > cnt->threshold) {
                 cnt->current_image->diffs = alg_switchfilter(cnt, cnt->current_image->diffs,
                                                              cnt->current_image->image_norm);
@@ -2218,6 +2245,7 @@ static void mlp_detection(struct context *cnt)
              * Finally we run the labelling feature.
              * All this is done in the alg_despeckle code.
              */
+            /* 去除杂点 */
             cnt->current_image->total_labels = 0;
             cnt->imgs.largest_label = 0;
             cnt->olddiffs = 0;
@@ -2251,6 +2279,7 @@ static void mlp_detection(struct context *cnt)
      * We also pretend to have a moving camera when we start Motion and when light
      * switch has been detected to allow camera to settle.
      */
+    /* moved表示当前摄像头正在移动，不进行运动检测 */
     if (cnt->moved) {
         cnt->moved--;
         cnt->current_image->diffs = 0;
@@ -2258,8 +2287,9 @@ static void mlp_detection(struct context *cnt)
 
 }
 
+
 /**
- * @brief 
+ * @brief 运动检测调整
  * 
  * @param cnt 上下文结构体指针
  */
@@ -2272,11 +2302,11 @@ static void mlp_tuning(struct context *cnt)
      * If noise tuning was selected, do it now. but only when
      * no frames have been recorded and only once per second
      */
+    /* 自动调整噪声值大小 */
     if ((cnt->conf.noise_tune && cnt->shots == 0) &&
          (!cnt->detecting_motion && (cnt->current_image->diffs <= cnt->threshold))) {
         alg_noise_tune(cnt, cnt->imgs.image_vprvcy.image_norm);
     }
-
 
     /*
      * If we are not noise tuning lets make sure that remote controlled
@@ -2299,7 +2329,7 @@ static void mlp_tuning(struct context *cnt)
          */
         if ((cnt->current_image->diffs > cnt->threshold) &&
             (cnt->current_image->diffs < cnt->threshold_maximum)) {
-
+            /* 计算运动物体位置及尺寸大小 */
             alg_locate_center_size(&cnt->imgs
                 , cnt->imgs.width
                 , cnt->imgs.height
@@ -2313,7 +2343,7 @@ static void mlp_tuning(struct context *cnt)
          * framerates above 5fps to save CPU resources and to keep sensitivity
          * at a constant level.
          */
-
+        /* 前后两次计算的像素差相差较小或运动物体位置相差较小时需要更新参考帧 */
         if ((cnt->current_image->diffs > cnt->threshold) &&
             (cnt->current_image->diffs < cnt->threshold_maximum) &&
             (cnt->conf.lightswitch_percent >= 1) &&
@@ -2331,6 +2361,7 @@ static void mlp_tuning(struct context *cnt)
         } else {
             alg_update_reference_frame(cnt, UPDATE_REF_FRAME);
         }
+        /* 保存上一处理帧的运动物体情况 */
         cnt->previous_diffs = cnt->current_image->diffs;
         cnt->previous_location_x = cnt->current_image->location.x;
         cnt->previous_location_y = cnt->current_image->location.y;
@@ -2339,6 +2370,12 @@ static void mlp_tuning(struct context *cnt)
 
 }
 
+
+/**
+ * @brief 
+ * 
+ * @param cnt 上下文结构体指针
+ */
 static void mlp_overlay(struct context *cnt)
 {
 
@@ -2418,6 +2455,12 @@ static void mlp_overlay(struct context *cnt)
 
 }
 
+
+/**
+ * @brief 
+ * 
+ * @param cnt 上下文结构体指针
+ */
 static void mlp_actions(struct context *cnt)
 {
 
@@ -2428,6 +2471,7 @@ static void mlp_actions(struct context *cnt)
     if ((cnt->current_image->diffs > cnt->threshold) &&
         (cnt->current_image->diffs < cnt->threshold_maximum)) {
         /* flag this image, it have motion */
+        /* 对当前图像添加运动图像标志 */
         cnt->current_image->flags |= IMAGE_MOTION;
         cnt->lightswitch_framecounter++; /* micro lightswitch */
     } else {
@@ -2441,6 +2485,7 @@ static void mlp_actions(struct context *cnt)
      * If post_capture is enabled we also take care of this in the this
      * code section.
      */
+    /* emulate_motion 一直保存视频不管有没有运动物体 */
     if ((cnt->conf.emulate_motion || cnt->event_user) && (cnt->startup_frames == 0)) {
         /*  If we were previously detecting motion, started a movie, then got
          *  no motion then we reset the start movie time so that we do not
@@ -2455,9 +2500,10 @@ static void mlp_actions(struct context *cnt)
             cnt->postcap = cnt->conf.post_capture;
             // MOTION_LOG(DBG, TYPE_ALL, NO_ERRNO, "(Em) Init post capture %d", cnt->postcap);
         }
-
+        /* 设置图像保存标志 */
         cnt->current_image->flags |= (IMAGE_TRIGGER | IMAGE_SAVE);
         /* Mark all images in image_ring to be saved */
+        /* 将图像缓冲环内的所有图像置为保存标志 */
         for (indx = 0; indx < cnt->imgs.image_ring_size; indx++) {
             cnt->imgs.image_ring[indx].flags |= IMAGE_SAVE;
         }
@@ -2633,6 +2679,12 @@ static void mlp_setupmode(struct context *cnt)
 
 }
 
+
+/**
+ * @brief 
+ * 
+ * @param cnt 上下文结构体指针
+ */
 static void mlp_snapshot(struct context *cnt)
 {
     /***** MOTION LOOP - SNAPSHOT FEATURE SECTION *****/
@@ -2657,6 +2709,12 @@ static void mlp_snapshot(struct context *cnt)
 
 }
 
+
+/**
+ * @brief 
+ * 
+ * @param cnt 上下文结构体指针
+ */
 static void mlp_timelapse(struct context *cnt)
 {
 
@@ -2729,8 +2787,6 @@ static void mlp_timelapse(struct context *cnt)
     }
 
     cnt->time_last_frame = cnt->time_current_frame;
-
-
 }
 
 static void mlp_loopback(struct context *cnt)
@@ -2922,18 +2978,29 @@ static void *motion_loop(void *arg)
 
     if (motion_init(cnt) == 0) {
         while (!cnt->finish || cnt->event_stop) {
+            /* 计算帧率、获取当前时间，以及当前秒时间内的帧数 */
             mlp_prepare(cnt);
             if (cnt->get_image) {
+                /* 从图像环中获取一帧图像数据，并填充时间、帧数等基本参数 */
                 mlp_resetimages(cnt);
+                /* 判断视频设备状态，若视频设备未准备好则进行重新启动 */
                 if (mlp_retry(cnt) == 1) {
                     break;
                 }
+                /* 获取一帧图像数据 */
                 if (mlp_capture(cnt) == 1)  {
                     break;
                 }
+                /* 
+                 * 计算像素差总数，新图像image_vprvcy.image_norm 
+                 * 和参考帧进行像素对比cnt->images->ref
+                 */
                 mlp_detection(cnt);
+                /* 根据配置文件调整参数，记录运动物体位置及尺寸大小 */
                 mlp_tuning(cnt);
+                /* 在图像上添加文字等 */
                 mlp_overlay(cnt);
+
                 mlp_actions(cnt);
                 mlp_setupmode(cnt);
             }

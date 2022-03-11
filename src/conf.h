@@ -87,14 +87,14 @@ struct config {
     const char      *despeckle_filter;
     const char      *area_detect;
     const char      *mask_file;
-    const char      *mask_privacy;
+    const char      *mask_privacy;          /* 隐私遮罩文件路径 */
     int             smart_mask_speed;
     int             lightswitch_percent;
     int             lightswitch_frames;
     int             minimum_motion_frames;
     int             event_gap;
     int             pre_capture;
-    int             post_capture;
+    int             post_capture;           /* 检测到运动物体后需要捕获的帧数 */
 
     /* Script execution configuration parameters */
     char            *on_event_start;

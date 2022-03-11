@@ -41,9 +41,9 @@ struct video_dev {
     int                      fd_device;
     const char              *video_device;
     int                      input;
-    int                      norm;
-    int                      width;
-    int                      height;
+    int                      norm;          /* 视频标准标志 */
+    int                      width;         /* 视频设备图像宽度 */
+    int                      height;        /* 视频设备图像高度 */
     long                     frequency;
     int                      fps;
     int                      owner;

@@ -1575,6 +1575,12 @@ int ffmpeg_put_image(struct ffmpeg *ffmpeg, struct image_data *img_data, const s
     #endif // HAVE_FFMPEG
 }
 
+/**
+ * @brief 
+ * 
+ * @param ffmpeg 
+ * @param tv1 
+ */
 void ffmpeg_reset_movie_start_time(struct ffmpeg *ffmpeg, const struct timeval *tv1)
 {
     #ifdef HAVE_FFMPEG

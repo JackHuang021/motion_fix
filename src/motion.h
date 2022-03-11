@@ -252,13 +252,13 @@ struct params_context {
 };
 
 struct image_data {
-    unsigned char *image_norm;
-    unsigned char *image_high;
-    int diffs;
+    unsigned char *image_norm;      /* 标准大小的图像数据 */
+    unsigned char *image_high;      /* 高分辨率的图像数据 */
+    int diffs;                      /* 像素差总数 */
     int64_t        idnbr_norm;
     int64_t        idnbr_high;
-    struct timeval timestamp_tv;
-    int shot;                   /* Sub second timestamp count */
+    struct timeval timestamp_tv;    /* 当前图像的时间 us */
+    int shot;                       /* 当前图像在当前秒内的帧数计数 */
 
     /*
     * Movement center to img center distance
@@ -308,12 +308,12 @@ struct stream_data {
 
 struct images {
     struct image_data *image_ring;    /* The base address of the image ring buffer */
-    int image_ring_size;
-    int image_ring_in;                /* Index in image ring buffer we last added a image into */
-    int image_ring_out;               /* Index in image ring buffer we want to process next time */
+    int image_ring_size;                /* 图像缓冲环尺寸大小 */
+    int image_ring_in;                  /* 图像缓冲环入环索引 */
+    int image_ring_out;                 /* 图像缓冲环出环索引 */
 
-    unsigned char *ref;               /* The reference frame */
-    struct image_data img_motion;     /* Picture buffer for motion images */
+    unsigned char *ref;               /* The reference frame 参考帧，当前图像和参考帧进行对比计算像素差 */
+    struct image_data img_motion;     /* Picture buffer for motion images 运动图像 */
     int *ref_dyn;                     /* Dynamic objects to be excluded from reference frame */
     struct image_data image_virgin;   /* Last picture frame with no text or locate overlay */
     struct image_data image_vprvcy;   /* Virgin image with the privacy mask applied */
@@ -333,17 +333,17 @@ struct images {
     int *smartmask_buffer;
     int *labels;
     int *labelsize;
-    int width;
-    int height;
+    int width;                      /* 图像的宽度大小 */
+    int height;                     /* 图像的高度大小 */
     int type;
-    int picture_type;                 /* Output picture type IMAGE_JPEG, IMAGE_PPM */
-    int size_norm;                    /* Number of bytes for normal size image */
+    int picture_type;               /* Output picture type IMAGE_JPEG, IMAGE_PPM */
+    int size_norm;                  /* 标准图像一帧的字节大小,YUV420P格式，一个像素占1.5字节 */
 
     int width_high;
     int height_high;
-    int size_high;                 /* Number of bytes for high resolution image */
+    int size_high;                  /* 高分辨率图像一帧的字节大小,YUV420P格式，一个像素占1.5字节 */
 
-    int motionsize;
+    int motionsize;                 /* 图像的大小，宽*高 */
     int labelgroup_max;
     int labels_above;
     int labelsize_max;
@@ -410,8 +410,8 @@ struct context {
 
     int locate_motion_mode;
     int locate_motion_style;
-    int process_thisframe;
-    struct rotdata rotate_data;              /* rotation data is thread-specific */
+    int process_thisframe;                  /* 是否处理当前帧图像标志，每秒最多处理3帧图像 */
+    struct rotdata rotate_data;             /* rotation data is thread-specific */
 
     int noise;
     int threshold;
@@ -449,21 +449,21 @@ struct context {
     int postcap;                             /* downcounter, frames left to to send post event */
     int shots;
     unsigned int detecting_motion;
-    struct tm *currenttime_tm;
+    struct tm *currenttime_tm;              /* 当前本地时间，由currenttime转换 */
     struct tm *eventtime_tm;
 
-    time_t currenttime;
+    time_t currenttime;                     /* 获取当前时间，1970到现在的秒数 */
     time_t lasttime;
     time_t eventtime;
     time_t movietime;
     time_t connectionlosttime;               /* timestamp from connection lost */
 
-    unsigned int lastrate;
+    unsigned int lastrate;                  /* 保存上一秒的帧率 */
     unsigned int startup_frames;
     unsigned int moved;
     unsigned int pause;
     int missing_frame_counter;               /* counts failed attempts to fetch picture frame from camera */
-    unsigned int lost_connection;
+    unsigned int lost_connection;           /* 断开连接标志 */
 
     int video_dev;
     int pipe;
@@ -517,9 +517,10 @@ struct context {
     int area_minx[9], area_miny[9], area_maxx[9], area_maxy[9];
     int areadetect_eventnbr;
     /* ToDo Determine why we need these...just put it all into prepare? */
-    unsigned long long int timenow, timebefore;
+    unsigned long long int timenow;     /* 当前帧时间us */
+    unsigned long long int timebefore;  /* 上一帧时间us */
 
-    unsigned int rate_limit;
+    unsigned int rate_limit;            /* 统计上一个处理帧到下一个处理帧之间的帧数 */
     time_t lastframetime;
     int minimum_frame_time_downcounter;
     unsigned int get_image;    /* Flag used to signal that we capture new image when we run the loop */
@@ -534,7 +535,9 @@ struct context {
     int smartmask_ratio;
     int smartmask_count;
 
-    int previous_diffs, previous_location_x, previous_location_y;
+    int previous_diffs;                 /* 上一处理帧的像素差总数 */
+    int previous_location_x;            /* 上一处理帧的物体中心位置x坐标 */
+    int previous_location_y;            /* 上一处理帧的物体中心位置y坐标 */
     unsigned long int time_last_frame, time_current_frame;
 
     unsigned int smartmask_lastrate;
