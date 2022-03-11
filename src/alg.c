@@ -198,6 +198,18 @@ void alg_locate_center_size(struct images *imgs, int width, int height, struct c
  * alg_draw_location
  *      Draws a box around the movement.
  */
+
+/**
+ * @brief 在当前运动物体上画上标记
+ * 
+ * @param cent 当前运动物体的坐标信息
+ * @param imgs images成员指针，包含运动图像数据
+ * @param width 当前图像宽度
+ * @param new 需要画上标记的图像数据指针
+ * @param style 标记的样式，包含方框和十字分划线
+ * @param mode 
+ * @param process_thisframe 图像是否为处理帧标志
+ */
 void alg_draw_location(struct coord *cent, struct images *imgs, int width, unsigned char *new,
                        int style, int mode, int process_thisframe)
 {
@@ -207,12 +219,17 @@ void alg_draw_location(struct coord *cent, struct images *imgs, int width, unsig
     out = imgs->img_motion.image_norm;
 
     /* Debug image always gets a 'normal' box. */
+    /* 现在motion_image中画框 */ 
     if ((mode == LOCATE_BOTH) && process_thisframe) {
+        /* miny行的起始位置 */
         int width_miny = width * cent->miny;
+        /* maxy行的起始位置 */
         int width_maxy = width * cent->maxy;
 
         for (x = cent->minx; x <= cent->maxx; x++) {
+            /* miny行的minx至maxx画直线 */
             int width_miny_x = x + width_miny;
+            /* maxy行的minx至maxx画直线 */
             int width_maxy_x = x + width_maxy;
 
             out[width_miny_x] =~out[width_miny_x];
@@ -220,13 +237,16 @@ void alg_draw_location(struct coord *cent, struct images *imgs, int width, unsig
         }
 
         for (y = cent->miny; y <= cent->maxy; y++) {
+            /* minx列的miny至maxy画直线 */
             int width_minx_y = cent->minx + y * width;
+            /* maxx列的miny至maxy画直线 */
             int width_maxx_y = cent->maxx + y * width;
 
             out[width_minx_y] =~out[width_minx_y];
             out[width_maxx_y] =~out[width_maxx_y];
         }
     }
+    /* 在当前标准图像上画框 */
     if (style == LOCATE_BOX) { /* Draw a box on normal images. */
         int width_miny = width * cent->miny;
         int width_maxy = width * cent->maxy;
@@ -247,6 +267,7 @@ void alg_draw_location(struct coord *cent, struct images *imgs, int width, unsig
             new[width_maxx_y] =~new[width_maxx_y];
         }
     } else if (style == LOCATE_CROSS) { /* Draw a cross on normal images. */
+        /* 在运动物体上画十字分划线 */
         int centy = cent->y * width;
 
         for (x = cent->x - 10;  x <= cent->x + 10; x++) {
@@ -266,6 +287,18 @@ void alg_draw_location(struct coord *cent, struct images *imgs, int width, unsig
  * alg_draw_red_location
  *          Draws a RED box around the movement.
  */
+
+/**
+ * @brief 在运动物体上画红色标记
+ * 
+ * @param cent 运动物体坐标结构体指针
+ * @param imgs cnt结构体中images成员指针
+ * @param width 图像宽度
+ * @param new 需要更改的图像
+ * @param style 标记的样式
+ * @param mode 
+ * @param process_thisframe 该图像帧是否为处理帧标志
+ */
 void alg_draw_red_location(struct coord *cent, struct images *imgs, int width, unsigned char *new,
                            int style, int mode, int process_thisframe)
 {
@@ -278,10 +311,13 @@ void alg_draw_red_location(struct coord *cent, struct images *imgs, int width, u
     x = imgs->motionsize;
     v = x + cblock;
     out = imgs->img_motion.image_norm;
+    /* U分量存储位置 */
     new_u = new + x;
+    /* V分量存储位置 */
     new_v = new + v;
 
     /* Debug image always gets a 'normal' box. */
+    /* 在运动图像上画框 */
     if ((mode == LOCATE_BOTH) && process_thisframe) {
         int width_miny = width * cent->miny;
         int width_maxy = width * cent->maxy;

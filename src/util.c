@@ -433,6 +433,19 @@ static void mystrftime_long (const struct context *cnt, int width, const char *w
  *
  * Returns: number of bytes written to the string s
  */
+
+/**
+ * @brief 
+ * 
+ * @param cnt 上下文结构体指针
+ * @param s 源字符串地址
+ * @param max 字符串最大长度
+ * @param userformat 
+ * @param tv1 
+ * @param filename 
+ * @param sqltype 
+ * @return size_t 
+ */
 size_t mystrftime(const struct context *cnt, char *s, size_t max, const char *userformat
             , const struct timeval *tv1, const char *filename, int sqltype)
 {

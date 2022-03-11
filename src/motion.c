@@ -560,6 +560,7 @@ static void motion_detected(struct context *cnt, int dev, struct image_data *img
     /* 在运动物体上画图案 */
     if (cnt->locate_motion_mode == LOCATE_ON) {
 
+        /* 在当前图像上的运动物体周围画方形盒子 */
         if (cnt->locate_motion_style == LOCATE_BOX) {
             alg_draw_location(location, imgs, imgs->width, img->image_norm, LOCATE_BOX,
                               LOCATE_BOTH, cnt->process_thisframe);
@@ -608,7 +609,7 @@ static void motion_detected(struct context *cnt, int dev, struct image_data *img
                        cnt->event_nr);
 
             /* EVENT_FIRSTMOTION triggers on_event_start_command and event_ffmpeg_newfile */
-
+            /* 将图像缓冲环内的所有数据逐帧进行事件保存 */
             indx = cnt->imgs.image_ring_out-1;
             do {
                 indx++;
@@ -638,6 +639,7 @@ static void motion_detected(struct context *cnt, int dev, struct image_data *img
     }
 
     /* Limit framerate */
+    /* 帧率控制 */
     if (img->shot < conf->framerate) {
         /*
          * If config option stream_motion is enabled, send the latest motion detected image
@@ -673,6 +675,12 @@ static void motion_detected(struct context *cnt, int dev, struct image_data *img
  * Parameters:
  *
  *   cnt        - current thread's context struct
+ */
+
+/**
+ * @brief 
+ * 
+ * @param cnt 上下文结构体指针
  */
 static void process_image_ring(struct context *cnt)
 {
@@ -732,6 +740,7 @@ static void process_image_ring(struct context *cnt)
              * many duplicated frames, say 10 fps, 5 duplicated, the video will
              * look like it is frozen every second for half a second.
              */
+            /* 加入填充帧以保持帧率 */
             if (!cnt->conf.movie_duplicate_frames) {
                 /* don't duplicate frames */
             } else if ((cnt->imgs.image_ring[cnt->imgs.image_ring_out].shot == 0) &&
@@ -1711,6 +1720,12 @@ static void mlp_mask_privacy(struct context *cnt)
     }
 }
 
+
+/**
+ * @brief 判断运动物体发生在图像中的区域，在指定区域的发送事件
+ * 
+ * @param cnt 上下文结构体指针
+ */
 static void mlp_areadetect(struct context *cnt)
 {
     int i, j, z = 0;
@@ -1876,6 +1891,7 @@ static void mlp_resetimages(struct context *cnt)
 
     /* cnt->current_image points to position in ring where to store image, diffs etc. */
     /* 保存上一帧图像数据的指针，从缓冲环中取一帧新的图像数据 */
+    /* 当前图像是取的图像环形缓冲中的数据 */
     old_image = cnt->current_image;
     cnt->current_image = &cnt->imgs.image_ring[cnt->imgs.image_ring_in];
 
@@ -2518,7 +2534,7 @@ static void mlp_actions(struct context *cnt)
         /* Count how many frames with motion there is in the last minimum_motion_frames in precap buffer */
         int frame_count = 0;
         int pos = cnt->imgs.image_ring_in;
-
+        /* 计算当前包含运动检测的帧 */
         for (indx = 0; indx < cnt->conf.minimum_motion_frames; indx++) {
             if (cnt->imgs.image_ring[pos].flags & IMAGE_MOTION) {
                 frame_count++;
@@ -2530,7 +2546,7 @@ static void mlp_actions(struct context *cnt)
                 pos--;
             }
         }
-
+        /* 当运动检测帧数大于设定的最小帧数时认为运动产生，需要保存图像 */
         if (frame_count >= cnt->conf.minimum_motion_frames) {
 
             cnt->current_image->flags |= (IMAGE_TRIGGER | IMAGE_SAVE);
@@ -2549,12 +2565,14 @@ static void mlp_actions(struct context *cnt)
             //MOTION_LOG(DBG, TYPE_ALL, NO_ERRNO, "Setup post capture %d", cnt->postcap);
 
             /* Mark all images in image_ring to be saved */
+            /* 图像缓冲环内所有的图像置为保存标志 */
             for (indx = 0; indx < cnt->imgs.image_ring_size; indx++) {
                 cnt->imgs.image_ring[indx].flags |= IMAGE_SAVE;
             }
 
         } else if (cnt->postcap > 0) {
            /* we have motion in this frame, but not enought frames for trigger. Check postcap */
+           /* 运动检测需要保存帧数仍然大于0，需要继续保存后续帧数的图像 */
             cnt->current_image->flags |= (IMAGE_POSTCAP | IMAGE_SAVE);
             cnt->postcap--;
             //MOTION_LOG(DBG, TYPE_ALL, NO_ERRNO, "post capture %d", cnt->postcap);
@@ -2563,6 +2581,7 @@ static void mlp_actions(struct context *cnt)
         }
 
         /* Always call motion_detected when we have a motion image */
+        /* 运动检测，并对运动物体进行标记 */
         motion_detected(cnt, cnt->video_dev, cnt->current_image);
     } else if (cnt->postcap > 0) {
         /* No motion, doing postcap */
@@ -2571,6 +2590,7 @@ static void mlp_actions(struct context *cnt)
         //MOTION_LOG(DBG, TYPE_ALL, NO_ERRNO, "post capture %d", cnt->postcap);
     } else {
         /* Done with postcap, so just have the image in the precap buffer */
+        /* 将当前图像的标志置为预捕获 */
         cnt->current_image->flags |= IMAGE_PRECAP;
         /* gapless movie feature */
         if ((cnt->conf.event_gap == 0) && (cnt->detecting_motion == 1)) {
@@ -2580,12 +2600,13 @@ static void mlp_actions(struct context *cnt)
     }
 
     /* Update last frame saved time, so we can end event after gap time */
+    /* 更新最后一帧需要保存图像的时间戳 */
     if (cnt->current_image->flags & IMAGE_SAVE) {
         cnt->lasttime = cnt->current_image->timestamp_tv.tv_sec;
     }
-
+    /* 判断运动检测发生在图片中的区域 */
     mlp_areadetect(cnt);
-
+    /* */
     process_image_ring(cnt);
 
     /* Check event gap */
@@ -2642,6 +2663,12 @@ static void mlp_actions(struct context *cnt)
 
 }
 
+
+/**
+ * @brief 
+ * 
+ * @param cnt 上下文结构体指针
+ */
 static void mlp_setupmode(struct context *cnt)
 {
     /***** MOTION LOOP - SETUP MODE CONSOLE OUTPUT SECTION *****/
@@ -2681,7 +2708,7 @@ static void mlp_setupmode(struct context *cnt)
 
 
 /**
- * @brief 
+ * @brief 间隔一定时间进行保存图像
  * 
  * @param cnt 上下文结构体指针
  */
@@ -2819,6 +2846,12 @@ static void mlp_loopback(struct context *cnt)
 
 }
 
+
+/**
+ * @brief 
+ * 
+ * @param cnt 上下文结构体指针
+ */
 static void mlp_parmsupdate(struct context *cnt)
 {
     /***** MOTION LOOP - ONCE PER SECOND PARAMETER UPDATE SECTION *****/
@@ -3002,12 +3035,18 @@ static void *motion_loop(void *arg)
                 mlp_overlay(cnt);
 
                 mlp_actions(cnt);
+                /* 记录更多调试日志 */
                 mlp_setupmode(cnt);
             }
+            /* 图像间隔保存判断 */
             mlp_snapshot(cnt);
+            /* 延时视频保存处理 */
             mlp_timelapse(cnt);
+
             mlp_loopback(cnt);
+
             mlp_parmsupdate(cnt);
+
             mlp_frametiming(cnt);
         }
     }
@@ -3154,6 +3193,13 @@ static void become_daemon(void)
     sigaction(SIGTSTP, &sig_ign_action, NULL);
 }
 
+
+/**
+ * @brief 初始化上下文结构体成员变量，解析参数配置文件
+ * 
+ * @param argc 命令行参数
+ * @param argv 命令行参数
+ */
 static void cntlist_create(int argc, char *argv[])
 {
     /*
@@ -3356,6 +3402,7 @@ static void motion_ntc(void)
 static void motion_startup(int daemonize, int argc, char *argv[])
 {
      /* Initialize our global mutex */
+     /* 初始化全局互斥锁 */
     pthread_mutex_init(&global_lock, NULL);
 
     /*

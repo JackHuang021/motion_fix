@@ -216,12 +216,12 @@ struct ffmpeg;
 */
 
 /* A image can have detected motion in it, but dosn't trigger an event, if we use minimum_motion_frames */
-#define IMAGE_MOTION     1
-#define IMAGE_TRIGGER    2
-#define IMAGE_SAVE       4
+#define IMAGE_MOTION     1      /* 图像包含运动检测标志 */
+#define IMAGE_TRIGGER    2      
+#define IMAGE_SAVE       4      /* 图像需要保存标志 */
 #define IMAGE_SAVED      8
-#define IMAGE_PRECAP    16
-#define IMAGE_POSTCAP   32
+#define IMAGE_PRECAP    16      /* 图像预捕获标志 */
+#define IMAGE_POSTCAP   32      /* 检测运动后需要保存的图像标志 */
 
 enum CAMERA_TYPE {
     CAMERA_TYPE_UNKNOWN,
@@ -266,9 +266,9 @@ struct image_data {
     */
     unsigned long cent_dist;
 
-    unsigned int flags;         /* Se IMAGE_* defines */
+    unsigned int flags;         /* Se IMAGE_* defines 图像的标志位 */
 
-    struct coord location;      /* coordinates for center and size of last motion detection*/
+    struct coord location;      /* coordinates for center and size of last motion detection 记录图像运动物体位置信息 */
 
     int total_labels;
 
@@ -379,19 +379,19 @@ struct rotdata {
 struct context {
     FILE *extpipe;
     int extpipe_open;
-    char conf_filename[PATH_MAX];
+    char conf_filename[PATH_MAX];       /* 配置文件路径 */
     int from_conf_dir;
     int threadnr;
     unsigned int daemon;
-    char pid_file[PATH_MAX];
-    char log_file[PATH_MAX];
+    char pid_file[PATH_MAX];            /* pid文件路径 */
+    char log_file[PATH_MAX];            /* 日志文件路径 */
     char log_type_str[6];
-    int log_level;
+    int log_level;                      /* 日志记录等级 */
     unsigned int log_type;
 
     struct config conf;
     struct images imgs;
-    struct trackoptions track;
+    struct trackoptions track;              /* 运动跟随点，暂时未启用跟随 */
     int                 track_posx;
     int                 track_posy;
 
@@ -413,7 +413,7 @@ struct context {
     int process_thisframe;                  /* 是否处理当前帧图像标志，每秒最多处理3帧图像 */
     struct rotdata rotate_data;             /* rotation data is thread-specific */
 
-    int noise;
+    int noise;                              /* 计算前后像素差的一个噪声值，差大于这个数才认为是一个真实的像素差 */
     int threshold;
     int threshold_maximum;
     int diffs_last[THRESHOLD_TUNE_LENGTH];
@@ -450,11 +450,11 @@ struct context {
     int shots;
     unsigned int detecting_motion;
     struct tm *currenttime_tm;              /* 当前本地时间，由currenttime转换 */
-    struct tm *eventtime_tm;
+    struct tm *eventtime_tm;                /* 当前事件时间，格式化时间 */
 
     time_t currenttime;                     /* 获取当前时间，1970到现在的秒数 */
-    time_t lasttime;
-    time_t eventtime;
+    time_t lasttime;                        /* 最后一帧需要保存图像的时间戳 */
+    time_t eventtime;                       /* 当前事件事件，精度秒 */
     time_t movietime;
     time_t connectionlosttime;               /* timestamp from connection lost */
 
@@ -469,7 +469,7 @@ struct context {
     int pipe;
     int mpipe;
 
-    char hostname[PATH_MAX];
+    char hostname[PATH_MAX];                /* 本地主机名 */
 
     int sql_mask;
 
@@ -538,7 +538,8 @@ struct context {
     int previous_diffs;                 /* 上一处理帧的像素差总数 */
     int previous_location_x;            /* 上一处理帧的物体中心位置x坐标 */
     int previous_location_y;            /* 上一处理帧的物体中心位置y坐标 */
-    unsigned long int time_last_frame, time_current_frame;
+    unsigned long int time_last_frame;
+    unsigned long int time_current_frame;   /* 当前帧时间戳 */
 
     unsigned int smartmask_lastrate;
 

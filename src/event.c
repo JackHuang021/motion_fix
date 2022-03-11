@@ -1422,6 +1422,17 @@ struct event_handlers event_handlers[] = {
  * The split between unsigned images and signed filenames was introduced in 3.2.2
  * as a code reading friendly solution to avoid a stream of compiler warnings in gcc 4.0.
  */
+
+/**
+ * @brief 
+ * 
+ * @param cnt 上下文结构体指针
+ * @param eventtype 时间类型
+ * @param img_data 图像数据
+ * @param filename 文件名称
+ * @param eventdata 事件伴随数据
+ * @param tv1 事件时间戳
+ */
 void event(struct context *cnt, motion_event eventtype, struct image_data *img_data,
            char *filename, void *eventdata, struct timeval *tv1)
 {

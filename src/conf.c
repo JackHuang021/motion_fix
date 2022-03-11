@@ -2603,7 +2603,7 @@ static struct context **conf_process(struct context **cnt, FILE *fp)
                  * These parameters use the util_parms_parse routine that
                  * will strip away the quotes if they are there
                  */
-                /* haystack 中查找第一次出现字符串 needle 的位置，不包含终止符 */
+                /* 在cmd中查找第一次出现字符串 needle 的位置，不包含终止符 */
                 if (strstr(cmd, "params") == NULL) {
                     if ((beg[0] == '"' && beg[strlen(beg)-1] == '"') ||
                         (beg[0] == '\'' && beg[strlen(beg)-1] == '\'')) {
@@ -2734,6 +2734,13 @@ void conf_print(struct context **cnt)
  * 
  * 填充cnt结构体成员
  */
+
+/**
+ * @brief 加载配置文件内的参数
+ * 
+ * @param cnt 
+ * @return struct context** 返回指向上下文结构体指针的指针
+ */
 struct context **conf_load(struct context **cnt)
 {
     FILE *fp = NULL;
@@ -2782,7 +2789,7 @@ struct context **conf_load(struct context **cnt)
     cnt[0]->log_file[0] = 0;
     cnt[0]->log_level = -1;
 
-    /* 从命令行参数中获取文件名 */
+    /* 解析命令行参数 */
     conf_cmdline(cnt[0], -1);
 
     /* 读取配置文件 */
@@ -2834,6 +2841,7 @@ struct context **conf_load(struct context **cnt)
     }
 
     /* Now we process the motion.conf config file and close it. */
+    /* 解析配置文件 */
     if (fp) {
         retcd = snprintf(cnt[0]->conf_filename
             ,sizeof(cnt[0]->conf_filename)

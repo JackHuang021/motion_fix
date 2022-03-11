@@ -1576,9 +1576,9 @@ int ffmpeg_put_image(struct ffmpeg *ffmpeg, struct image_data *img_data, const s
 }
 
 /**
- * @brief 
+ * @brief 记录当前保存视频的起始时间
  * 
- * @param ffmpeg 
+ * @param ffmpeg ffmpeg结构体指针
  * @param tv1 
  */
 void ffmpeg_reset_movie_start_time(struct ffmpeg *ffmpeg, const struct timeval *tv1)

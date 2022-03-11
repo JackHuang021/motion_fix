@@ -91,7 +91,7 @@ struct config {
     int             smart_mask_speed;
     int             lightswitch_percent;
     int             lightswitch_frames;
-    int             minimum_motion_frames;
+    int             minimum_motion_frames;  /* 运动检测的最少帧数，默认为1 */
     int             event_gap;
     int             pre_capture;
     int             post_capture;           /* 检测到运动物体后需要捕获的帧数 */
@@ -194,8 +194,8 @@ struct config {
 
     /* Command line parameters */
     /* 保存命令行参数 */
-    int             argc;
-    char            **argv;     
+    int             argc;               /* 命令行参数 */
+    char            **argv;             /* 命令行参数 */
 };
 
 struct context;
